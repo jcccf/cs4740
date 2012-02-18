@@ -12,12 +12,12 @@ class AuthorPrediction():
     self.author_model[name] = NGramModel(self.ngram, self.smooth_type)
     self.author_model[name].train(sentences)
   
-  def predict_author(self, sentences):
+  def predict_author(self, sentence):
     # Given the text, predict which author wrote it
     result = dict()
     for name, mod in self.author_model.iteritems():
       print "Computing for %s..." % name
-      result[name] = mod.get_prob(sentences[0]) # TODO fix this
+      result[name] = mod.get_prob(sentence)
     return max(result, key=result.get)
 
 if __name__ == '__main__':
@@ -28,4 +28,4 @@ if __name__ == '__main__':
   co_test = WordParser('data/EnronDataset/test.txt', 'authors')
   co_test_sentences = co_test.sentences()
   print co_test_sentences.keys()
-  ap.predict_author(co_test_sentences['beck-s\t'])
+  ap.predict_author(co_test_sentences['beck-s\t'][0])
