@@ -11,6 +11,8 @@ class WordParser:
     self.filename = filename
     self.frequencies = None
     self.inv_frequencies = None
+    self.word_list = None
+    self.sentence_list = None
     self.words()
     
   # http://stackoverflow.com/questions/753052/strip-html-from-strings-in-python
@@ -39,20 +41,30 @@ class WordParser:
     
   def words(self):
     # Return list of words in order
-    try:
-      with open(self.filename+".words", 'r') as f:
-        print "Loading words from pickle..."
-        self.word_list = pickle.load(f)
-    except IOError as e:
-      print "Haven't loaded this file before, please wait!"
-      self.__load_string()
-      print "Tokenizing..."
-      sentences = nltk.sent_tokenize(self.string)
-      self.word_list = [[w for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
-      self.word_list = list(itertools.chain.from_iterable(self.word_list))
-      print "Writing to pickle..."
-      pickle.dump(self.word_list, open(self.filename+".words", 'w'))
+    if not self.word_list:
+      try:
+        with open(self.filename+".words", 'r') as f:
+          print "Loading words from pickle..."
+          self.word_list = pickle.load(f)
+      except IOError as e:
+        print "Haven't loaded this file before, please wait!"
+        self.__load_string()
+        print "Tokenizing..."
+        sentences = nltk.sent_tokenize(self.string)
+        self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
+        self.word_list = list(itertools.chain.from_iterable(self.sentence_list))
+        print "Writing to pickle..."
+        pickle.dump(self.word_list, open(self.filename+".words", 'w'))
+        pickle.dump(self.sentence_list, open(self.filename+".sentences", 'w'))
     return self.word_list
+    
+  def sentences(self):
+    # Return a list of list of words in order (each word list is a sentence)
+    if not self.sentence_list: # Lazy loading again
+      with open(self.filename+".sentences", 'r') as f:
+        print "Loading sentences from pickle..."
+        self.sentence_list = pickle.load(f)
+    return self.sentence_list
   
   def __load_frequencies(self):
     if not self.frequencies:
@@ -82,8 +94,7 @@ class WordParser:
       self.inv_frequencies_count = { k:len(v) for k, v in self.inv_frequencies.iteritems()}
   
   def inv_freq(self, n):
-    # Returns a dictionary( n:int => count of words )
-    # count of words that appear n times
+    # Returns a count of words that appear n times
     self.__load_inv_frequencies()
     if n in self.inv_frequencies_count:
       return self.inv_frequencies_count[n]
@@ -95,5 +106,7 @@ class WordParser:
     self.__load_inv_frequencies()
     return self.inv_frequencies[n]
 
-# w = WordParser('data/fbis/fbis.train')
-# print w.inv_freq(1)
+if __name__ == '__main__':
+  w = WordParser('data/fbis/fbis.train')
+  print w.sentences()
+  print w.inv_freq(1)
