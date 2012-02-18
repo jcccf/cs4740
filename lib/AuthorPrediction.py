@@ -21,11 +21,14 @@ class AuthorPrediction():
     return max(result, key=result.get)
 
 if __name__ == '__main__':
-  ap = AuthorPrediction(2)
+  ap = AuthorPrediction(2, smooth_type='lap')
   co = WordParser('data/EnronDataset/train.txt', 'authors')
   for author, sentences in co.sentences().iteritems():
     ap.add_author(author, sentences)
+  print "Training is done"
   co_test = WordParser('data/EnronDataset/test.txt', 'authors')
   co_test_sentences = co_test.sentences()
   print co_test_sentences.keys()
-  ap.predict_author(co_test_sentences['beck-s\t'][0])
+  print "Loaded Test Data"
+  import itertools
+  print ap.predict_author(list(itertools.chain.from_iterable(co_test_sentences['beck-s\t'])))
