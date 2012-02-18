@@ -95,5 +95,5 @@ class WordParser:
     self.__load_inv_frequencies()
     return self.inv_frequencies[n]
 
-w = WordParser('data/fbis/fbis.train')
-print w.inv_freq(1)
+# w = WordParser('data/fbis/fbis.train')
+# print w.inv_freq(1)
