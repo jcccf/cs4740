@@ -80,7 +80,11 @@ class NGramModel():
         v = self.vocab_dict().keys()
         assert pos < len(v)
         return v[pos]
-    pass
+    else:
+      pos = int(floor(random() * (self.vocab_size())))
+      v = self.vocab_dict().keys()
+      assert pos < len(v)
+      return v[pos]
   
   def vocab_size(self):
     empty = tuple()
@@ -140,13 +144,14 @@ class NGramModel():
     return 1 if len(str) == 0 else get_prob( str[:-1] ) + get_cond_prob( str )
 
 if __name__ == "__main__":
-  mod = NGramModel(2)
+  mod = NGramModel(3)
   corpus = [ [ 1, 2, 3, 1, 2, 4, 2, 4 ] ]
   mod.train(corpus)
   print mod.vocab_size()
+  print mod.freq
   print mod.vocab_dict()
   print mod.get_rand_word( [3] )
-  print exp(mod.get_cond_prob( [2,3] ))
+  print exp(mod.get_cond_prob( [5,3] ))
   print mod.laplacian_smoothing( [5], 3 )
   
 
