@@ -1,6 +1,7 @@
 
 class NGramModel():
   def __init__(self, n, smooth_type=None)
+    # self.freq:  dict( word_list => (#occurrances, dict(word=>frequency) ) )
     self.freq = dict()
     if smooth_type == None:
       self.smooth = lambda x : x
@@ -15,13 +16,14 @@ class NGramModel():
     head = tup[:-1]
     tail = tup[-1]
     if head in self.freq:
-      d = (self.freq[ head ])
+      (count,d) = self.freq[ head ]
       if tail in d:
         d[ tail ] += 1
       else:
         d[ tail ] = 1
+      self.freq[head] = (count+1, d)
     else:
-      self.freq[head] = dict( tail : 1 )
+      self.freq[head] = (1, dict( tail : 1 ))
 
   def add_all_ntuple(self, tup):
     # tup = (w1, w2, w3, ..., wn)
@@ -33,6 +35,10 @@ class NGramModel():
     pass
     
   def laplacian_smoothing( self, head, tail ):
+    # d=freq[head]
+    # count = sum(d)
+    # n_unigram = length( freq[ [] ].keys() ) ## Vocabulary size
+    # P(tail | head) = (#(head,tail)+1) / (#head + Vocab)
     # returns P(tail | head)
     pass
   
