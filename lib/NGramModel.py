@@ -98,8 +98,15 @@ class NGramModel():
     # n_unigram = length( freq[ [] ].keys() ) ## Vocabulary size
     # P(tail | head) = (#(head,tail)+1) / (#head + Vocab)
     # returns P(tail | head)
-    pass
-    return 1
+    head = tuple(head)
+    if head in self.freq:
+      (count,d) = self.freq[head]
+      if tail in d:
+        return (d[tail]+1) / float(count+self.vocab_size())
+      else:
+        return 1.0 / float(count+self.vocab_size())
+    else:
+      return 1.0 / self.vocab_size()
   
   def no_smoothing(self, head, tail):
     head = tuple(head)
@@ -140,5 +147,6 @@ if __name__ == "__main__":
   print mod.vocab_dict()
   print mod.get_rand_word( [3] )
   print exp(mod.get_cond_prob( [2,3] ))
+  print mod.laplacian_smoothing( [5], 3 )
   
 
