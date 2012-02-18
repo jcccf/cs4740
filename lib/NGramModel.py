@@ -80,7 +80,11 @@ class NGramModel():
         v = self.vocab_dict().keys()
         assert pos < len(v)
         return v[pos]
-    pass
+    else:
+      pos = int(floor(random() * (self.vocab_size())))
+      v = self.vocab_dict().keys()
+      assert pos < len(v)
+      return v[pos]
   
   def vocab_size(self):
     empty = tuple()
@@ -98,8 +102,15 @@ class NGramModel():
     # n_unigram = length( freq[ [] ].keys() ) ## Vocabulary size
     # P(tail | head) = (#(head,tail)+1) / (#head + Vocab)
     # returns P(tail | head)
-    pass
-    return 1
+    head = tuple(head)
+    if head in self.freq:
+      (count,d) = self.freq[head]
+      if tail in d:
+        return (d[tail]+1) / float(count+self.vocab_size())
+      else:
+        return 1.0 / float(count+self.vocab_size())
+    else:
+      return 1.0 / self.vocab_size()
   
   def no_smoothing(self, head, tail):
     head = tuple(head)
@@ -133,12 +144,14 @@ class NGramModel():
     return 1 if len(str) == 0 else get_prob( str[:-1] ) + get_cond_prob( str )
 
 if __name__ == "__main__":
-  mod = NGramModel(2)
+  mod = NGramModel(3)
   corpus = [ [ 1, 2, 3, 1, 2, 4, 2, 4 ] ]
   mod.train(corpus)
   print mod.vocab_size()
+  print mod.freq
   print mod.vocab_dict()
   print mod.get_rand_word( [3] )
-  print exp(mod.get_cond_prob( [2,3] ))
+  print exp(mod.get_cond_prob( [5,3] ))
+  print mod.laplacian_smoothing( [5], 3 )
   
 
