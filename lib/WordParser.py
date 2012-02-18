@@ -7,7 +7,8 @@ except:
   import pickle
 
 class WordParser:
-  def __init__(self, filename):
+  def __init__(self, filename, file_type=None):
+    self.file_type = file_type
     self.filename = filename
     self.frequencies = None
     self.inv_frequencies = None
@@ -43,14 +44,26 @@ class WordParser:
     # Return list of words in order
     if not self.word_list:
       try:
-        with open(self.filename+".words", 'r') as f:
-          print "Loading words from pickle..."
-          self.word_list = pickle.load(f)
+        self.word_list = pickle.load(open(self.filename+".words", 'r'))
+        if self.file_type == 'authors':
+          self.authors = pickle.load(open(self.filename+".authors", 'r'))
       except IOError as e:
         print "Haven't loaded this file before, please wait!"
         self.__load_string()
         print "Tokenizing..."
-        sentences = nltk.sent_tokenize(self.string)
+        
+        # Decide what sentences are
+        if self.file_type == 'authors':
+          lines = self.string.splitlines()
+          self.authors, sentences = [], []
+          for l in lines:
+            auth, sent = l.split(' ', 1)
+            self.authors.append(auth)
+            sentences.append(sent)
+          pickle.dump(self.authors, open(self.filename+".authors", 'w'))
+        else:
+          sentences = nltk.sent_tokenize(self.string)
+        
         self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
         self.word_list = list(itertools.chain.from_iterable(self.sentence_list))
         print "Writing to pickle..."
@@ -64,7 +77,14 @@ class WordParser:
       with open(self.filename+".sentences", 'r') as f:
         print "Loading sentences from pickle..."
         self.sentence_list = pickle.load(f)
-    return self.sentence_list
+    
+    if self.file_type == 'authors':
+      auths = {}
+      for a,s in zip(self.authors, self.sentence_list):
+        auths.setdefault(a,[]).append(s)
+      return auths
+    else:
+      return self.sentence_list
   
   def __load_frequencies(self):
     if not self.frequencies:
@@ -107,6 +127,7 @@ class WordParser:
     return self.inv_frequencies[n]
 
 if __name__ == '__main__':
-  w = WordParser('data/fbis/fbis.train')
+  # w = WordParser('data/fbis/fbis.train')
+  w = WordParser('data/EnronDataset/train.txt', 'authors')
   print w.sentences()
   print w.inv_freq(1)
