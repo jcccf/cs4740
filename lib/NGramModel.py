@@ -144,14 +144,14 @@ class NGramModel():
     return 1 if len(str) == 0 else self.get_prob( str[:-1] ) + self.get_cond_prob( str )
 
 if __name__ == "__main__":
-  mod = NGramModel(3)
+  mod = NGramModel(3,'lap')
   corpus = [ [ 1, 2, 3, 1, 2, 4, 2, 4 ] ]
   mod.train(corpus)
   print mod.vocab_size()
   print mod.freq
   print mod.vocab_dict()
   print mod.get_rand_word( [3] )
-  print exp(mod.get_cond_prob( [5,3] ))
+  print exp(mod.get_prob( [2,3] ))
   print mod.laplacian_smoothing( [5], 3 )
   
 
