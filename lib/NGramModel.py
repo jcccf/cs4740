@@ -141,7 +141,12 @@ class NGramModel():
   # P( w1 w2 ... wm ) = P(w1) P(w2 | w1) P(w3 | w1, w2) ... P(wn | w1,...,wn-1) P(wn+1 | w2,...,wn) ...
   def get_prob( self, str ):
     # Return log of probability
-    return 1 if len(str) == 0 else self.get_prob( str[:-1] ) + self.get_cond_prob( str )
+    #return 0 if len(str) == 0 else self.get_prob( str[:-1] ) + self.get_cond_prob( str )
+    acc = 0
+    while len(str) > 0:
+      acc += self.get_cond_prob(str)
+      str = str[:-1]
+    return acc
 
 if __name__ == "__main__":
   mod = NGramModel(3,'lap')
@@ -151,7 +156,7 @@ if __name__ == "__main__":
   print mod.freq
   print mod.vocab_dict()
   print mod.get_rand_word( [3] )
-  print exp(mod.get_prob( [2,3] ))
+  print exp(mod.get_prob( [2,3]*20000 ))
   print mod.laplacian_smoothing( [5], 3 )
   
 
