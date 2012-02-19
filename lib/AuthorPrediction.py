@@ -15,6 +15,7 @@ class AuthorPrediction():
     # Given the text, predict which author wrote it
     result = dict()
     for name, mod in self.author_model.iteritems():
-      print "Computing for %s..." % name
+      print name, ": ",
       result[name] = mod.get_prob(sentence)
+      print result[name]
     return max(result, key=result.get)

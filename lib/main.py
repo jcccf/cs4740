@@ -46,9 +46,18 @@ elif dataset == 5:
   print "done"
   
   import itertools
+  tp, fn, total = 0, 0, 0
   for author, sentences in co_test_sentences.iteritems():
     print "Predicting for %s..." % author
-    print ap.predict_author(list(itertools.chain.from_iterable(sentences)))
-    
+    for sentence in sentences:
+      total += 1
+      predicted = ap.predict_author(sentence)
+      print predicted
+      if predicted == author:
+        tp += 1
+  print "True Positives", tp
+  print "Total", total
+  print "Accuracy", (tp-0.0)/total
+
 else:
   print "Invalid dataset chosen!"
