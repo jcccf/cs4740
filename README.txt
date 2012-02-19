@@ -1,0 +1,1 @@
+From the root folder (not lib), run "python lib/main.py"
