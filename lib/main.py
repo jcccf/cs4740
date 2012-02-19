@@ -1,11 +1,11 @@
-import WordParser, NGramModel, RandomSentence, AuthorPrediction
+import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
 from math import exp
 
 print "==CS 4740 Project 1=="
 ngram = int(input("How many grams do you want? (unigram=1, bigram=2, trigram=3, etc.) "))
 dataset = int(input("Which dataset do you want? (fbis=1, wsj=2, DataSet3=3, DataSet4=4, enron=5) "))
 
-# DATASET 3 RANDOM SENTENCE
+# DATASETS 1-4 RANDOM SENTENCE AND DOCUMENT PERPLEXITY
 if dataset <= 4:
   if dataset == 1:
     train_file, test_file = 'data/fbis/fbis.train', 'data/fbis/fbis.test'
@@ -21,16 +21,25 @@ if dataset <= 4:
   print "==Results=="
   
   cor = WordParser.WordParser(train_file)
-  mod = NGramModel.NGramModel(ngram)
+  mod = NGramModel.NGramModel(ngram, smooth_type='lap') # TODO maybe not laplacian for all?
   mod.train([cor.words()])
   
+  # RANDOM SENTENCE
   if task == 1:
     ran = RandomSentence.RandomSentence(mod)
     for i in range(10):
       print ' '.join(ran.gen_sentence(10))
+  
+  # PERPLEXITY
   elif task == 2:
-    test = WordParser.WordParser(test_file)
-    print mod.get_prob(test.words())
+    if dataset <= 2:
+      print "Per-document Perplexity"
+      test = WordParser.DocWordParser(test_file)
+      for doc in test.docs():
+        print mod.get_prob(list(itertools.chain.from_iterable(doc)))
+    else:
+      test = WordParser.WordParser(test_file)
+      print mod.get_prob(test.words())
 
 # ENRON
 elif dataset == 5:
@@ -45,7 +54,6 @@ elif dataset == 5:
     ap.add_author(author, sentences)
   print "done"
   
-  import itertools
   tp, fn, total = 0, 0, 0
   for author, sentences in co_test_sentences.iteritems():
     print "Predicting for %s..." % author

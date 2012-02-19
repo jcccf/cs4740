@@ -127,7 +127,7 @@ class WordParser(object):
 class DocWordParser(WordParser):
   def __init__(self, filename):
     super(DocWordParser, self).__init__(filename)
-    self._document_list = None
+    self.document_list = None
   
   def _load(self):
     try:
