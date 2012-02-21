@@ -51,6 +51,9 @@ class NGramModel():
       while len(lst) > 0: # Add trailing words
         lst = lst[1:]
         self.add_all_ntuple(lst)
+    # If Good-Turing smoothing is used, adjust the counts in the model
+    if self.smooth == self.good_turing_smoothing:
+        self.good_turing_discount_model();
   
   def get_rand_word( self, tup ):
     # Given n-1 words, get the n-th word
@@ -122,11 +125,50 @@ class NGramModel():
         return 0
     else:
       return 0
-    
+
   def good_turing_smoothing( self, head, tail ):
-    # returns P(tail | head)
-    pass
-    return 1
+    # this function does the same thing as no_smoothing because
+    # the frequencies for each N-gram were adjusted with Good-Turing
+    # smoothing with the good_turing_smooth_model function
+    return self.no_smoothing(head, tail)
+
+  def good_turing_discount_model(self):  
+    # we first construct table of counts of number of N-grams that occur c times for all c
+    ngram_count = dict()  
+    for head in self.freq.iterkeys():
+        if isinstance(head,tuple): #a len(head)+1-gram is being processed
+            gram_length = len(head)+1
+        elif head == []: #a unigram is being processed
+            gram_length = 1
+        else: #head is a single word, hence a bigram is being processed
+            gram_length = 2
+        (count,d) = self.freq[head]
+        for (value) in d.itervalues():
+            if (gram_length,value) in ngram_count:    
+                ngram_count[(gram_length,value)] += 1
+            else:
+                ngram_count[(gram_length,value)] = 1                             
+    # next we use the table of counts of number of N-grams that occur c times
+    # to revise the count for each N-gram in the model, thus performing Good-Turing smoothing
+    for head in self.freq.iterkeys():
+        if isinstance(head,tuple): #a len(head)+1-gram is being processed
+            gram_length = len(head)+1
+        elif head == []: #a unigram is being processed
+            gram_length = 1
+        else: #head is a single word, hence a bigram is being processed
+            gram_length = 2
+        (count,d) = self.freq[head]
+        count = 0 #count will be recomputed in the following for loop
+        for tail in d.iterkeys():
+            Nc = ngram_count[(gram_length,d[tail])]
+            if (gram_length,d[tail]+1) in ngram_count: #at least one N-gram occured c+1 times    
+                Ncplus1 = ngram_count[(gram_length,d[tail]+1)]
+                d[tail] = float(d[tail]+1) * float(Ncplus1) / float(Nc) #adjust c to c*
+            else:
+                d[tail] = d[tail]+1 #can't discount if no N-grams that occur c+1 times
+            count += d[tail] #reflect the adjustment in count
+        self.freq[head] = (count, d) #write the updated count and d into the model
+    # smoothing complete
     
   def get_cond_prob( self, tup ):
     # Given n words, get log( P( wn | w1,...,wn-1 ) )
@@ -149,14 +191,16 @@ class NGramModel():
     return acc
 
 if __name__ == "__main__":
-  mod = NGramModel(3,'lap')
+  #mod = NGramModel(3,'lap')
+  mod = NGramModel(3,'gte')
   corpus = [ [ 1, 2, 3, 1, 2, 4, 2, 4 ] ]
   mod.train(corpus)
   print mod.vocab_size()
   print mod.freq
   print mod.vocab_dict()
   print mod.get_rand_word( [3] )
-  print exp(mod.get_prob( [2,3]*20000 ))
-  print mod.laplacian_smoothing( [5], 3 )
+  print exp(mod.get_prob( [2,3] ))
+  #print exp(mod.get_prob( [2,3]*20000 ))
+  #print mod.laplacian_smoothing( [5], 3 )
   
 
