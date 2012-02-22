@@ -59,7 +59,8 @@ elif task == 2:
             with open('data/output/perplexity/%d_%d_%s_doc.txt' % (i+1, ngram_num, smoothing_method), 'w') as f2:
               for doc in test.docs():
                 f2.write('%f\n' % mod.get_perplexity(list(itertools.chain.from_iterable(doc))))
-          #f.write('%f %d %s\n' % (mod.get_perplexity(test.words()), ngram_num, smoothing_method))
+          else:
+            f.write('%f %d %s\n' % (mod.get_perplexity(test.words()), ngram_num, smoothing_method))
 
 # Enron Author Prediction
 elif task == 3:
