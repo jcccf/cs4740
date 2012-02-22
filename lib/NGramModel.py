@@ -13,6 +13,8 @@ class NGramModel():
       self.smooth = self.laplacian_smoothing
     elif smooth_type == 'gte':
       self.smooth = self.good_turing_smoothing
+      # a table of the number of N-grams that occur c times for all values of c  
+      self.ngram_count = dict()
     else:
       raise Exception("Invalid smoothing function name")
       
@@ -60,29 +62,61 @@ class NGramModel():
     head = tuple(tup[ -(self.n-1): ])
     if head in self.freq:
       (count,d) = self.freq[head]
-      # TODO: Assuming no smoothing
-      pos = random() * (count)
-      for (w,f) in d.iteritems():
-        if pos < f:
-          return w
-        else:
-          pos -= f
-      assert False #Never should get here!
-      
-      # TODO: Assuming Laplacian smoothing
-      pos = random() * (count + self.vocab_size())
-      if pos < count:
+      if self.smooth == self.no_smoothing:
+        #Assuming no smoothing
+        pos = random() * (count)
         for (w,f) in d.iteritems():
           if pos < f:
             return w
           else:
             pos -= f
         assert False #Never should get here!
-      else:
-        pos = int(floor(pos-count))
-        v = self.vocab_dict().keys()
-        assert pos < len(v)
-        return v[pos]
+      elif self.smooth == self.laplacian_smoothing:
+        # Assuming Laplacian smoothing
+        pos = random() * (count + self.vocab_size())
+        if pos < count:
+          for (w,f) in d.iteritems():
+            if pos < f:
+              return w
+            else:
+              pos -= f
+          assert False #Never should get here!
+        else:
+          pos = int(floor(pos-count))
+          v = self.vocab_dict().keys()
+          assert pos < len(v)
+          return v[pos]
+      elif self.smooth == self.good_turing_smoothing:
+        # Assuming Good-Turing smoothing
+        if isinstance(head,tuple): #a len(head)+1-gram is being processed
+            gram_length = len(head)+1
+        elif head == []: #a unigram is being processed
+            gram_length = 1
+        else: #head is a single word, hence a bigram is being processed
+            gram_length = 2
+        # compute the smoothed counts of possible N-grams that did not occur in the training data
+        if self.ngram_count[(gram_length,0)] > 0:
+            c_smoothed = float(self.ngram_count[(gram_length,1)]) / float(self.ngram_count[(gram_length,0)])
+        else: # for the case of data where every possible N-gram does appear at least once
+            # can't discount in this case since N0 is 0, so just add 1 to each possible N-gram
+            c_smoothed = 1        
+        pos = random() * (count + c_smoothed * (self.vocab_size()-len(d)))
+        if pos < count:
+          for (word,f) in d.iteritems():
+            if pos < f:
+              return word
+            else:
+              pos -= f
+          assert False #Never should get here!
+        else:
+          pos = pos - count; 
+          for word in self.vocab_dict().iterkeys():
+            if word not in d:
+              if pos < c_smoothed:
+                return word
+              else:
+                pos -= c_smoothed
+          assert False #Never should get here!                    
     else:
       pos = int(floor(random() * (self.vocab_size())))
       v = self.vocab_dict().keys()
@@ -127,14 +161,49 @@ class NGramModel():
       return 0
 
   def good_turing_smoothing( self, head, tail ):
-    # this function does the same thing as no_smoothing because
-    # the frequencies for each N-gram were adjusted with Good-Turing
-    # smoothing with the good_turing_smooth_model function
-    return self.no_smoothing(head, tail)
+    head = tuple(head)
+    if head in self.freq:
+        (count,d) = self.freq[head]
+        if isinstance(head,tuple): #a len(head)+1-gram is being processed
+            gram_length = len(head)+1
+        elif head == []: #a unigram is being processed
+            gram_length = 1
+        else: #head is a single word, hence a bigram is being processed
+            gram_length = 2
+        # we have to add the smoothed count of the possible N-grams that did not occur
+        # in the training data.
+        # we add (0 + 1) * N1 / N0 for each of the possible N-grams that did not occur
+        # (self.vocab_size()-len(d)) gives the number of N-grams beginning with the head
+        # used as the key that did not appear in the test data.
+        # thus we add (self.vocab_size()-len(d)) * N1 / N0 to the count
+        if self.ngram_count[(gram_length,0)] > 0:
+            count += (self.vocab_size()-len(d)) * float(self.ngram_count[(gram_length,1)]) / float(self.ngram_count[(gram_length,0)])
+        else: # for the case of data where every possible N-gram does appear at least once
+            # can't discount in this case since N0 is 0, so just add 1 to each possible N-gram
+            count += (self.vocab_size()-len(d))
+        if tail in d:
+            # frequencies have already been smoothed by good_turing_discount_model()
+            return d[tail] / float(count)
+        else:
+            # we compute a smoothed count for c = 0 by c_smoothed = (0+1)*N1/N0
+            N0 = self.ngram_count[(gram_length,0)]
+            N1 = self.ngram_count[(gram_length,1)]
+            if N0 > 0:
+                c_smoothed = float(N1) / float(N0)
+            else: 
+                # for the case of training data where every possible N-gram appears at least once
+                # can't divide by N0 since N0 is 0
+                c_smoothed = 1;
+            # the smoothed count is then divided by the total count,
+            # which was increased to take into account all the possible 
+            # N-grams which did not occur, earlier in the function
+            # returns the conditional probability
+            return c_smoothed / float(count)
+    else:
+        return 1.0 / self.vocab_size()
 
   def good_turing_discount_model(self):  
-    # we first construct table of counts of number of N-grams that occur c times for all c
-    ngram_count = dict()  
+    # we first construct table of counts of number of N-grams that occur c times for all c  
     for head in self.freq.iterkeys():
         if isinstance(head,tuple): #a len(head)+1-gram is being processed
             gram_length = len(head)+1
@@ -144,10 +213,19 @@ class NGramModel():
             gram_length = 2
         (count,d) = self.freq[head]
         for (value) in d.itervalues():
-            if (gram_length,value) in ngram_count:    
-                ngram_count[(gram_length,value)] += 1
+            if (gram_length,value) in self.ngram_count:    
+                self.ngram_count[(gram_length,value)] += 1
             else:
-                ngram_count[(gram_length,value)] = 1                             
+                self.ngram_count[(gram_length,value)] = 1
+    # we must also compute counts for number of N-grams that occurred 0 times 
+    for gram_length in range(1, self.n+1):
+        # first set the count to be the number of possible N-grams formed from permutations of N words
+        self.ngram_count[(gram_length,0)] = pow(self.vocab_size(), gram_length)      
+    for (gram_length,occurrences) in self.ngram_count.iterkeys():
+        # next we subtract the number of N-grams that occurred more than once
+        # to get the number of N-grams that occured 0 times
+        if occurrences > 0:
+            self.ngram_count[(gram_length,0)] -= self.ngram_count[(gram_length,occurrences)]             
     # next we use the table of counts of number of N-grams that occur c times
     # to revise the count for each N-gram in the model, thus performing Good-Turing smoothing
     for head in self.freq.iterkeys():
@@ -160,14 +238,14 @@ class NGramModel():
         (count,d) = self.freq[head]
         count = 0 #count will be recomputed in the following for loop
         for tail in d.iterkeys():
-            Nc = ngram_count[(gram_length,d[tail])]
-            if (gram_length,d[tail]+1) in ngram_count: #at least one N-gram occured c+1 times    
-                Ncplus1 = ngram_count[(gram_length,d[tail]+1)]
+            Nc = self.ngram_count[(gram_length,d[tail])]
+            if (gram_length,d[tail]+1) in self.ngram_count: #at least one N-gram occured c+1 times    
+                Ncplus1 = self.ngram_count[(gram_length,d[tail]+1)]
                 d[tail] = float(d[tail]+1) * float(Ncplus1) / float(Nc) #adjust c to c*
             else:
-                d[tail] = d[tail]+1 #can't discount if no N-grams that occur c+1 times
-            count += d[tail] #reflect the adjustment in count
-        self.freq[head] = (count, d) #write the updated count and d into the model
+                d[tail] = d[tail]+1 # can't discount if no N-grams that occur c+1 times
+            count += d[tail] # reflect the adjustment in count
+        self.freq[head] = (count, d) # update the model with the smoothed counts
     # smoothing complete
     
   def get_cond_prob( self, tup ):
