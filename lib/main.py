@@ -12,13 +12,14 @@ task = int(input("What task to perform? (random sentences=1, perplexity=2, autho
 
 # Random Sentences
 if task == 1:
-  for smoothing_method in smoothing_list:
-    for ngram_num in ngram_list:
-      for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
-        if i <= 1:
-          cor = WordParser.DocWordParser(train_file)
-        else:
-          cor = WordParser.WordParser(train_file)
+  for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
+    if i <= 1:
+      cor = WordParser.DocWordParser(train_file)
+    else:
+      cor = WordParser.WordParser(train_file)
+    
+    for smoothing_method in smoothing_list:
+      for ngram_num in ngram_list:
         mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method)
         mod.train([cor.words()])
         ran = RandomSentence.RandomSentence(mod)
@@ -29,34 +30,35 @@ if task == 1:
 # Perplexity
 elif task == 2:
   for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
+    if i <= 1:
+      cor = WordParser.DocWordParser(train_file)
+      test = WordParser.DocWordParser(test_file)
+    else:
+      cor = WordParser.WordParser(train_file)
+      test = WordParser.WordParser(test_file)
+    
     with open('data/output/perplexity/%d.txt' % (i+1), 'w') as f:
       for smoothing_method in smoothing_list:
         for ngram_num in ngram_list:
-          if i <= 1:
-            cor = WordParser.DocWordParser(train_file)
-          else:
-            cor = WordParser.WordParser(train_file)
           mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method)
           mod.train([cor.words()])
           if i <= 1:
-            test = WordParser.DocWordParser(test_file)
             # Per document perplexity
             with open('data/output/perplexity/%d_%d_%s_doc.txt' % (i+1, ngram_num, smoothing_method), 'w') as f2:
               for doc in test.docs():
                 f2.write('%f\n' % mod.get_perplexity(list(itertools.chain.from_iterable(doc))))
-          else:
-            test = WordParser.WordParser(test_file)
-          f.write('%f %d %d\n' % (mod.get_perplexity(test.words()), ngram_num, smoothing_method))
+          #f.write('%f %d %s\n' % (mod.get_perplexity(test.words()), ngram_num, smoothing_method))
 
 # Enron Author Prediction
 elif task == 3:
+  cor = WordParser.EnronWordParser('data/EnronDataset/train.txt')
+  cor_val = WordParser.EnronWordParser('data/EnronDataset/validation.txt')
+  cor_val_sentences = cor_val.author_sentence_tuples()
+  cor_test = WordParser.EnronWordParser('data/EnronDataset/test.txt')
+  cor_test_sentences = cor_test.author_sentence_tuples()
+  
   for smoothing_method in smoothing_list:
     for ngram_num in ngram_list:
-      cor = WordParser.EnronWordParser('data/EnronDataset/train.txt')
-      cor_val = WordParser.EnronWordParser('data/EnronDataset/validation.txt')
-      cor_val_sentences = cor_val.author_sentence_tuples()
-      cor_test = WordParser.EnronWordParser('data/EnronDataset/test.txt')
-      cor_test_sentences = cor_test.author_sentence_tuples()
       ap = AuthorPrediction.AuthorPrediction(ngram_num, smooth_type=smoothing_method)
         
       print "Loading authors...",
