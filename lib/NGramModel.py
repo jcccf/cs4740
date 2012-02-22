@@ -293,31 +293,35 @@ class NGramModel():
         self.freq[head] = (count, d) # update the model with the smoothed counts
     # smoothing complete
     
-  def get_cond_prob( self, tup ):
+  def get_cond_prob( self, tup, unknown_substituted = False ):
     # Given n words, get log( P( wn | w1,...,wn-1 ) )
     # Given more than n words, only use the last n words and ignores the rest
     if len(tup) < 1:
       raise Exception("get_cond_prob: tup should not be an empty list")
-    vd = self.vocab_dict()
-    tup = map( lambda x: x if vd.has_key(x) else "<UNK>", tup )
+    if not unknown_substituted:
+      vd = self.vocab_dict()
+      tup = map( lambda x: x if vd.has_key(x) else "<UNK>", tup )
     tup = tup[-self.n:]
     head = tup[:-1]
     tail = tup[-1]
     return log(self.smooth(head,tail))
   
   # P( w1 w2 ... wm ) = P(w1) P(w2 | w1) P(w3 | w1, w2) ... P(wn | w1,...,wn-1) P(wn+1 | w2,...,wn) ...
-  def get_prob( self, str ):
+  def get_prob( self, str, unknown_substituted = False ):
     # Return log of probability
     #return 0 if len(str) == 0 else self.get_prob( str[:-1] ) + self.get_cond_prob( str )
+    if not unknown_substituted:
+      vd = self.vocab_dict()
+      str = map( lambda x: x if vd.has_key(x) else "<UNK>", str )
     acc = 0
     while len(str) > 0:
-      acc += self.get_cond_prob(str)
+      acc += self.get_cond_prob(str, unknown_substituted = True)
       str = str[:-1]
     return acc
     
-  def get_perplexity(self, str):
+  def get_perplexity(self, str, unknown_substituted = False):
     # Perplexity = P(string)^{-1/n}, so log(perplexity) = -1/n * log(P(string))
-    return exp(-1.0/len(str) * self.get_prob(str))
+    return exp(-1.0/len(str) * self.get_prob(str,unknown_substituted))
 
 if __name__ == "__main__":
   #mod = NGramModel(3,'lap')
