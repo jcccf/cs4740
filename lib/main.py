@@ -3,6 +3,7 @@ from math import exp
 
 ngram_list = [1,2] # [1,2,3,4,5]
 smoothing_list = ['lap'] # [None, 'lap']
+unknown_list = ['first'] # [None, 'first', 'once']
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
 random_sentence_length = 10
