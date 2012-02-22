@@ -147,6 +147,10 @@ class NGramModel():
       acc += self.get_cond_prob(str)
       str = str[:-1]
     return acc
+    
+  def get_perplexity(self, str):
+    # Perplexity = P(string)^{-1/n}, so log(perplexity) = -1/n * log(P(string))
+    return exp(-1.0/len(str) * self.get_prob(str))
 
 if __name__ == "__main__":
   mod = NGramModel(3,'lap')

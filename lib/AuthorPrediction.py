@@ -11,11 +11,18 @@ class AuthorPrediction():
     self.author_model[name] = NGramModel(self.ngram, self.smooth_type)
     self.author_model[name].train(sentences)
   
-  def predict_author(self, sentence):
+  def predict_author(self, sentence, actual_label=None):
     # Given the text, predict which author wrote it
-    result = dict()
-    for name, mod in self.author_model.iteritems():
-      print name, ": ",
-      result[name] = mod.get_prob(sentence)
-      print result[name]
-    return max(result, key=result.get)
+    result = {}
+    if len(sentence) == 0: # If the sentence is blank, predict some arbitrary author
+      print "Blank sentence received"
+      for i, (name, _) in enumerate(self.author_model.iteritems()):
+        result[name] = i+1
+    else:
+      for name, mod in self.author_model.iteritems():
+        result[name] = mod.get_perplexity(sentence)
+    if actual_label:
+      rank = 1.0/(sorted(result, key=result.get).index(actual_label) + 1)
+    else:
+      rank = float("-inf")
+    return (result, min(result, key=result.get), rank)

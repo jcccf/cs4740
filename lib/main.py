@@ -1,71 +1,84 @@
 import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
 from math import exp
 
+ngram_list = [1,2] # [1,2,3,4,5]
+smoothing_list = ['lap'] # [None, 'lap']
+train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
+test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
+random_sentence_length = 10
+
 print "==CS 4740 Project 1=="
-ngram = int(input("How many grams do you want? (unigram=1, bigram=2, trigram=3, etc.) "))
-dataset = int(input("Which dataset do you want? (fbis=1, wsj=2, DataSet3=3, DataSet4=4, enron=5) "))
+task = int(input("What task to perform? (random sentences=1, perplexity=2, author prediction=3) "))
 
-# DATASETS 1-4 RANDOM SENTENCE AND DOCUMENT PERPLEXITY
-if dataset <= 4:
-  if dataset == 1:
-    train_file, test_file = 'data/fbis/fbis.train', 'data/fbis/fbis.test'
-  elif dataset == 2:
-    train_file, test_file = 'data/wsj/wsj.train', 'data/wsj/wsj.test'
-  elif dataset == 3:
-    train_file, test_file = 'data/Dataset3/Train.txt', 'data/Dataset3/Test.txt'
-  elif dataset == 4:
-    train_file, test_file = 'data/Dataset4/Train.txt', 'data/Dataset4/Test.txt'
-  
-  task = int(input("What task to perform? (random sentences=1, perplexity of test set=2) "))
-  
-  print "==Results=="
-  
-  cor = WordParser.WordParser(train_file)
-  mod = NGramModel.NGramModel(ngram, smooth_type='lap') # TODO maybe not laplacian for all?
-  mod.train([cor.words()])
-  
-  # RANDOM SENTENCE
-  if task == 1:
-    ran = RandomSentence.RandomSentence(mod)
-    for i in range(10):
-      print ' '.join(ran.gen_sentence(10))
-  
-  # PERPLEXITY
-  elif task == 2:
-    if dataset <= 2:
-      print "Per-document Perplexity"
-      test = WordParser.DocWordParser(test_file)
-      for doc in test.docs():
-        print mod.get_prob(list(itertools.chain.from_iterable(doc)))
-    else:
-      test = WordParser.WordParser(test_file)
-      print mod.get_prob(test.words())
+# Random Sentences
+if task == 1:
+  for smoothing_method in smoothing_list:
+    for ngram_num in ngram_list:
+      for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
+        if i <= 1:
+          cor = WordParser.DocWordParser(train_file)
+        else:
+          cor = WordParser.WordParser(train_file)
+        mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method)
+        mod.train([cor.words()])
+        ran = RandomSentence.RandomSentence(mod)
+        with open('data/output/rand_sent/%d_%d_%s.txt' % (i+1, ngram_num, smoothing_method), 'w') as f:
+          for i in range(10):
+            f.write(' '.join(ran.gen_sentence(random_sentence_length)) + '\n')
 
-# ENRON
-elif dataset == 5:
-  print "==Results=="
-  ap = AuthorPrediction.AuthorPrediction(ngram, smooth_type='lap')
-  co = WordParser.EnronWordParser('data/EnronDataset/train.txt')
-  co_test = WordParser.EnronWordParser('data/EnronDataset/test.txt')
-  co_test_sentences = co_test.author_sentences()
-  
-  print "Loading authors...",
-  for author, sentences in co.author_sentences().iteritems():
-    ap.add_author(author, sentences)
-  print "done"
-  
-  tp, fn, total = 0, 0, 0
-  for author, sentences in co_test_sentences.iteritems():
-    print "Predicting for %s..." % author
-    for sentence in sentences:
-      total += 1
-      predicted = ap.predict_author(sentence)
-      print predicted
-      if predicted == author:
-        tp += 1
-  print "True Positives", tp
-  print "Total", total
-  print "Accuracy", (tp-0.0)/total
+# Perplexity
+elif task == 2:
+  for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
+    with open('data/output/perplexity/%d.txt' % (i+1), 'w') as f:
+      for smoothing_method in smoothing_list:
+        for ngram_num in ngram_list:
+          if i <= 1:
+            cor = WordParser.DocWordParser(train_file)
+          else:
+            cor = WordParser.WordParser(train_file)
+          mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method)
+          mod.train([cor.words()])
+          if i <= 1:
+            test = WordParser.DocWordParser(test_file)
+            # Per document perplexity
+            with open('data/output/perplexity/%d_%d_%s_doc.txt' % (i+1, ngram_num, smoothing_method), 'w') as f2:
+              for doc in test.docs():
+                f2.write('%f\n' % mod.get_perplexity(list(itertools.chain.from_iterable(doc))))
+          else:
+            test = WordParser.WordParser(test_file)
+          f.write('%f %d %d\n' % (mod.get_perplexity(test.words()), ngram_num, smoothing_method))
 
+# Enron Author Prediction
+elif task == 3:
+  for smoothing_method in smoothing_list:
+    for ngram_num in ngram_list:
+      cor = WordParser.EnronWordParser('data/EnronDataset/train.txt')
+      cor_val = WordParser.EnronWordParser('data/EnronDataset/validation.txt')
+      cor_val_sentences = cor_val.author_sentence_tuples()
+      cor_test = WordParser.EnronWordParser('data/EnronDataset/test.txt')
+      cor_test_sentences = cor_test.author_sentence_tuples()
+      ap = AuthorPrediction.AuthorPrediction(ngram_num, smooth_type=smoothing_method)
+        
+      print "Loading authors...",
+      for author, sentences in cor.author_sentences().iteritems():
+        ap.add_author(author, sentences)
+      print "done"
+      
+      total, tp = 0, 0
+      with open('data/output/enron/%d_%s_kaggle.txt' % (ngram_num, smoothing_method), 'w') as f2:
+        with open('data/output/enron/%d_%s.txt' % (ngram_num, smoothing_method), 'w') as f:
+          for set_name, sentences in [('val',cor_val_sentences), ('test',cor_test_sentences)]:
+            for author, sentence in sentences:
+              values, predicted, rank = ap.predict_author(sentence, author)
+              if set_name == 'val':
+                total += 1
+                if predicted == author:
+                  tp += 1
+              f.write('%s %s %f ' % (author, predicted, rank))
+              for _,val in sorted(values.iteritems()):
+                f.write('%f ' % val)
+              f.write('\n')
+              f2.write('%s\n' % predicted)
+      print 'Accuracy:', (tp-0.0)/total, tp, total
 else:
-  print "Invalid dataset chosen!"
+  print "Invalid task chosen!"

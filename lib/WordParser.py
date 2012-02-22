@@ -140,8 +140,11 @@ class DocWordParser(WordParser):
       
       print "Tokenizing..."
       
-      # Split into documents
-      docs = self.string.split('</DOC>')
+      # Split into documents (only get parts within <TEXT>)
+      docs = self.string.split('</TEXT>')
+      docs = [d.split('<TEXT>')[1] for d in docs if '<TEXT>' in d]
+      brackets_re = re.compile(r'\[.*?\]') # Remove things in brackets as well
+      docs = [brackets_re.sub('', d) for d in docs]
       docs = self._sanitize_list(docs)
       
       self.sentence_list = []
@@ -186,6 +189,12 @@ class EnronWordParser(WordParser):
       auths.setdefault(a,[]).append(s)
     return auths
     
+  def author_sentence_tuples(self):
+    # Return ordered (author, sentence) tuples
+    self._load_sentences()
+    self._load_authors()
+    return zip(self.authors, self.sentence_list)
+    
   def _load_authors(self):
     if not self.authors:
       print "Lazily loading authors from pickle..."
@@ -216,10 +225,13 @@ class EnronWordParser(WordParser):
       pickle.dump(self.sentence_list, open(self.filename+".sentences", 'w'))
 
 if __name__ == '__main__':
-  # w = EnronWordParser('data/EnronDataset/train.txt')
+  # w = EnronWordParser('data/EnronDataset/validation.txt')
   # for a, s in w.author_sentences().iteritems():
   #   print a
-  #   print len(s)
+  #   for i, x in enumerate(s):
+  #     if len(x) == 0:
+  #       print "BAH"
+  #       print s[i-1]
   # print w.inv_freq(1)
   w = DocWordParser('data/wsj/wsj.train')
   print w.docs()
