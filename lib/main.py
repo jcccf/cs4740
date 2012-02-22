@@ -1,5 +1,6 @@
 import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
 from math import exp
+import os
 
 ngram_list = [1,2] # [1,2,3,4,5]
 smoothing_list = ['lap'] # [None, 'lap']
@@ -23,6 +24,10 @@ if task == 1:
         mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method)
         mod.train([cor.words()])
         ran = RandomSentence.RandomSentence(mod)
+        try:
+          os.makedirs('data/output/rand_sent/')
+        except:
+          pass
         with open('data/output/rand_sent/%d_%d_%s.txt' % (i+1, ngram_num, smoothing_method), 'w') as f:
           for i in range(10):
             f.write(' '.join(ran.gen_sentence(random_sentence_length)) + '\n')
@@ -30,6 +35,10 @@ if task == 1:
 # Perplexity
 elif task == 2:
   for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
+    try:
+      os.makedirs('data/output/perplexity/')
+    except e:
+      pass
     with open('data/output/perplexity/%d.txt' % (i+1), 'w') as f:
       for smoothing_method in smoothing_list:
         for ngram_num in ngram_list:
@@ -66,6 +75,10 @@ elif task == 3:
       print "done"
       
       total, tp = 0, 0
+      try:
+        os.makedirs('data/output/enron/')
+      except:
+        pass
       with open('data/output/enron/%d_%s_kaggle.txt' % (ngram_num, smoothing_method), 'w') as f2:
         with open('data/output/enron/%d_%s.txt' % (ngram_num, smoothing_method), 'w') as f:
           for set_name, sentences in [('val',cor_val_sentences), ('test',cor_test_sentences)]:
