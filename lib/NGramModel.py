@@ -3,7 +3,7 @@ from math import floor,log,exp
 
 
 class NGramModel():
-  def __init__(self, n, smooth_type=None):
+  def __init__(self, n, smooth_type=None, unknown_type=None):
     # self.freq:  dict( word_list => (#occurrances, dict(word=>frequency) ) )
     self.freq = dict({tuple(): (0,dict())})
     self.n = n
@@ -17,7 +17,51 @@ class NGramModel():
       self.ngram_count = dict()
     else:
       raise Exception("Invalid smoothing function name")
-      
+    if unknown_type == None:
+      self.unknown = self.unknown_none
+    elif unknown_type == 'first':
+      self.unknown = self.unknown_first
+    elif unknown_type == 'once':
+      self.unknown = self.unknown_once
+    else:
+      raise Exception("Invalid unknown function name")
+
+  
+  def unknown_none(self, corpus):
+    return corpus
+  
+  def unknown_first(self, corpus):
+    vocab = dict()
+    new_corpus = []
+    for doc in corpus:
+      new_doc = []
+      for word in doc:
+        if not vocab.has_key(word): # First occurance
+          vocab[word] = 1
+          word = "<UNK>" # special type for unknown words
+        new_doc.append(word)
+      new_corpus.append(new_doc)
+    return new_corpus
+  
+  def unknown_once(self, corpus):
+    vocab = dict()
+    new_corpus = []
+    for doc in corpus:
+      for word in doc:
+        vocab.setdefault(word,0)
+        vocab[word] += 1
+    vocab_once = dict()
+    for word,count in vocab.iteritems():
+      if count == 1:
+        vocab_once[word] = 1
+    for doc in corpus:
+      new_doc = []
+      for word in doc:
+        if vocab_once.has_key(word):
+          word = "<UNK>"
+        new_doc.append(word)
+      new_corpus.append(new_doc)
+    return new_corpus
     
   def add_ntuple(self, tup):
     head = tuple(tup[-self.n:-1])
@@ -41,8 +85,9 @@ class NGramModel():
       self.add_ntuple(lst)
   
   def train(self, corpus):
+    unk_corpus = self.unknown(corpus)
     # corpus: list of documents, each document is a list of words
-    for doc in corpus:
+    for doc in unk_corpus:
       lst = []
       nm1 = self.n-1
       for w in doc:
@@ -253,6 +298,8 @@ class NGramModel():
     # Given more than n words, only use the last n words and ignores the rest
     if len(tup) < 1:
       raise Exception("get_cond_prob: tup should not be an empty list")
+    vd = self.vocab_dict()
+    tup = map( lambda x: x if vd.has_key(x) else "<UNK>", tup )
     tup = tup[-self.n:]
     head = tup[:-1]
     tail = tup[-1]
@@ -274,13 +321,14 @@ class NGramModel():
 
 if __name__ == "__main__":
   #mod = NGramModel(3,'lap')
-  mod = NGramModel(3,'gte')
+  mod = NGramModel(1,'lap','first')
   corpus = [ [ 1, 2, 3, 1, 2, 4, 2, 4 ] ]
   mod.train(corpus)
   print mod.vocab_size()
   print mod.freq
   print mod.vocab_dict()
   print mod.get_rand_word( [3] )
+  print exp(mod.get_cond_prob( [2,3] ))
   print exp(mod.get_prob( [2,3] ))
   #print exp(mod.get_prob( [2,3]*20000 ))
   #print mod.laplacian_smoothing( [5], 3 )

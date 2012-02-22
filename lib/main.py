@@ -1,8 +1,10 @@
 import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
 from math import exp
+import os
 
 ngram_list = [1,2] # [1,2,3,4,5]
 smoothing_list = ['lap'] # [None, 'lap']
+unknown_list = ['first'] # [None, 'first', 'once']
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
 random_sentence_length = 10
@@ -12,6 +14,11 @@ task = int(input("What task to perform? (random sentences=1, perplexity=2, autho
 
 # Random Sentences
 if task == 1:
+  try:
+    os.makedirs('data/output/rand_sent/')
+  except:
+    pass
+
   for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
     if i <= 1:
       cor = WordParser.DocWordParser(train_file)
@@ -29,6 +36,11 @@ if task == 1:
 
 # Perplexity
 elif task == 2:
+  try:
+    os.makedirs('data/output/perplexity/')
+  except e:
+    pass
+
   for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
     if i <= 1:
       cor = WordParser.DocWordParser(train_file)
@@ -51,6 +63,11 @@ elif task == 2:
 
 # Enron Author Prediction
 elif task == 3:
+  try:
+    os.makedirs('data/output/enron/')
+  except:
+    pass
+
   cor = WordParser.EnronWordParser('data/EnronDataset/train.txt')
   cor_val = WordParser.EnronWordParser('data/EnronDataset/validation.txt')
   cor_val_sentences = cor_val.author_sentence_tuples()
@@ -67,6 +84,7 @@ elif task == 3:
       print "done"
       
       total, tp = 0, 0
+
       with open('data/output/enron/%d_%s_kaggle.txt' % (ngram_num, smoothing_method), 'w') as f2:
         with open('data/output/enron/%d_%s.txt' % (ngram_num, smoothing_method), 'w') as f:
           for set_name, sentences in [('val',cor_val_sentences), ('test',cor_test_sentences)]:
