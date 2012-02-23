@@ -1,5 +1,7 @@
-from random import random
+from random import random,randint
 from math import floor,log,exp
+from collections import deque
+import profile, random, string
 
 
 class NGramModel():
@@ -7,7 +9,7 @@ class NGramModel():
     # self.freq:  dict( word_list => (#occurrances, dict(word=>frequency) ) )
     self.freq = dict({tuple(): (0,dict())})
     self.n = n
-    if smooth_type == None:
+    if smooth_type == None or smooth_type == 'none':
       self.smooth = self.no_smoothing
     elif smooth_type == 'lap':
       self.smooth = self.laplacian_smoothing
@@ -17,7 +19,7 @@ class NGramModel():
       self.ngram_count = dict()
     else:
       raise Exception("Invalid smoothing function name")
-    if unknown_type == None:
+    if unknown_type == None or unknown_type == 'none':
       self.unknown = self.unknown_none
     elif unknown_type == 'first':
       self.unknown = self.unknown_first
@@ -314,27 +316,41 @@ class NGramModel():
       vd = self.vocab_dict()
       str = map( lambda x: x if vd.has_key(x) else "<UNK>", str )
     acc = 0
-    while len(str) > 0:
-      acc += self.get_cond_prob(str, unknown_substituted = True)
-      str = str[:-1]
+    cur = deque([], self.n)
+    for w in str:
+      cur.append(w)
+      assert len(cur) <= self.n
+      acc += self.get_cond_prob(list(cur), unknown_substituted = True)
     return acc
     
   def get_perplexity(self, str, unknown_substituted = False):
     # Perplexity = P(string)^{-1/n}, so log(perplexity) = -1/n * log(P(string))
     return exp(-1.0/len(str) * self.get_prob(str,unknown_substituted))
 
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+  return ''.join(random.choice(chars) for x in range(size))
+    
 if __name__ == "__main__":
   #mod = NGramModel(3,'lap')
-  mod = NGramModel(1,'lap','first')
-  corpus = [ [ 1, 2, 3, 1, 2, 4, 2, 4 ] ]
-  mod.train(corpus)
-  print mod.vocab_size()
-  print mod.freq
-  print mod.vocab_dict()
-  print mod.get_rand_word( [3] )
-  print exp(mod.get_cond_prob( [2,3] ))
-  print exp(mod.get_prob( [2,3] ))
+  # mod = NGramModel(1,'lap','first')
+  # corpus = [ [ 1, 2, 3, 1, 2, 4, 2, 4 ] ]
+  # mod.train(corpus)
+  # print mod.vocab_size()
+  # print mod.freq
+  # print mod.vocab_dict()
+  # print mod.get_rand_word( [3] )
+  # print exp(mod.get_cond_prob( [2,3] ))
+  # print exp(mod.get_prob( [2,3] ))
   #print exp(mod.get_prob( [2,3]*20000 ))
   #print mod.laplacian_smoothing( [5], 3 )
+  
+  print "Speed test:"
+  sizes = [1000, 10000, 100000]
+  for s in sizes:
+    words = dict( [ (i,id_generator()) for i in xrange(s/10) ] )
+    corpus = [ [ words[randint(0,s/10 - 1)] for i in xrange(s)] ]
+    mod = NGramModel(4,'lap','none')
+    profile.run("mod.train(corpus)")
+    profile.run("mod.get_perplexity( corpus[0] )")
   
 
