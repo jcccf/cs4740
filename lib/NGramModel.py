@@ -1,7 +1,7 @@
 from random import random,randint
 from math import floor,log,exp
 from collections import deque
-import profile, random, string
+import profile, string
 
 
 class NGramModel():

@@ -3,7 +3,7 @@ from math import exp
 import os
 
 ngram_list = [1,2] # [1,2,3,4,5]
-smoothing_list = ['lap'] # ['none', 'lap']
+smoothing_list = ['lap', 'gte'] # ['none', 'lap']
 unknown_list = ['first'] # ['none', 'first', 'once']
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
@@ -32,7 +32,7 @@ if task == 1:
           mod.train([cor.words()])
           ran = RandomSentence.RandomSentence(mod)
           with open('data/output/rand_sent/%d_%d_%s_%s.txt' % (i+1, ngram_num, smoothing_method,unknown_method), 'w') as f:
-            for i in range(10):
+            for j in range(10):
               f.write(' '.join(ran.gen_sentence(random_sentence_length)) + '\n')
 
 # Perplexity
