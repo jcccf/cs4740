@@ -5,6 +5,8 @@ try:
   import cPickle as pickle
 except:
   import pickle
+  
+KEEP_PUNCTUATION = True
 
 class WordParser(object):
   def __init__(self, filename):
@@ -56,7 +58,10 @@ class WordParser(object):
       print "Tokenizing..."
       sentences = nltk.sent_tokenize(self.string)
       sentences = self._sanitize_list(sentences)
-      self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
+      if KEEP_PUNCTUATION:
+        self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s)] for s in sentences]
+      else:
+        self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
       self.word_list = list(itertools.chain.from_iterable(self.sentence_list))
       print "Writing to pickle..."
       pickle.dump(self.word_list, open(self.filename+".words", 'w'))
@@ -154,7 +159,10 @@ class DocWordParser(WordParser):
       for doc in docs:
         sentences = nltk.sent_tokenize(doc)
         sentences = self._sanitize_list(sentences)
-        sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
+        if KEEP_PUNCTUATION:
+          sentence_list = [[w.lower() for w in nltk.word_tokenize(s)] for s in sentences]          
+        else:
+          sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
         word_list = list(itertools.chain.from_iterable(sentence_list))
         self.document_list.append(sentence_list)
         self.word_list.append(word_list)
@@ -218,7 +226,10 @@ class EnronWordParser(WordParser):
         sentences.append(sent)
       pickle.dump(self.authors, open(self.filename+".authors", 'w'))
       
-      self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
+      if KEEP_PUNCTUATION:
+        self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s)] for s in sentences]
+      else:
+        self.sentence_list = [[w.lower() for w in nltk.word_tokenize(s) if w not in string.punctuation] for s in sentences]
       self.word_list = list(itertools.chain.from_iterable(self.sentence_list))
       print "Writing to pickle..."
       pickle.dump(self.word_list, open(self.filename+".words", 'w'))
