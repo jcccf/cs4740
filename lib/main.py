@@ -2,8 +2,8 @@ import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
 from math import exp
 import os
 
-ngram_list = [1, 2, 3, 4, 5] # [1,2,3,4,5]
-smoothing_list = ['none'] # ['none', 'lap']
+ngram_list = [1, 2] # [1,2,3,4,5]
+smoothing_list = ['none'] # ['none', 'lap', 'gte']
 unknown_list = ['none'] # ['none', 'first', 'once']
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
@@ -73,6 +73,14 @@ elif task == 2:
                 for doc in test.docs():
                   f2.write('%f\n' % mod.get_perplexity(list(itertools.chain.from_iterable(doc))))
             f.write('%f %d %s\n' % (mod.get_perplexity(test.words()), ngram_num, smoothing_method))
+            ####### cross perplexity computations ####
+            for j, test_file in enumerate(test_list):
+              if j <= 1:
+                test2 = WordParser.DocWordParser(test_file)
+              else:
+                test2 = WordParser.WordParser(test_file)
+              f.write('cross%d %f %d %s %s\n' % (j+1, mod.get_perplexity(test2.words()), ngram_num, smoothing_method, unknown_method))
+            ####### cross perplexity computations ####  
 
 # Enron Author Prediction
 elif task == 3:
