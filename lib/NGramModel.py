@@ -13,6 +13,7 @@ class NGramModel():
     self.freq = dict({tuple(): (0,dict())})
     self.vocab = dict() # Explicitly store the vocab now
     self.n = n
+    self.vocab_expension = 0
     if smooth_type == None or smooth_type == 'none':
       self.smooth = self.no_smoothing
     elif smooth_type == 'lap':
@@ -183,10 +184,13 @@ class NGramModel():
       return v[pos]
   
   def vocab_size(self):
-    return len(self.vocab)
+    return len(self.vocab) + self.vocab_expension
     # empty = tuple()
     # (count,d) = self.freq[empty]
     # return len(d)
+  
+  def set_vocab_expansion(self, val):
+    self.vocab_expension = val
     
   def vocab_dict(self):
     return self.vocab
@@ -358,13 +362,20 @@ if __name__ == "__main__":
   #print exp(mod.get_prob( [2,3]*20000 ))
   #print mod.laplacian_smoothing( [5], 3 )
   
-  print "Speed test:"
-  sizes = [1000]
-  for s in sizes:
-    words = dict( [ (i,id_generator()) for i in xrange(s/10) ] )
-    corpus = [ [ words[randint(0,s/10 - 1)] for i in xrange(s)] ]
-    mod = NGramModel(4,'gte','none','n')
-    profile.run("mod.train(corpus)")
-    profile.run("mod.get_perplexity( corpus[0] )")
+  # print "Speed test:"
+  # sizes = [1000]
+  # for s in sizes:
+    # words = dict( [ (i,id_generator()) for i in xrange(s/10) ] )
+    # corpus = [ [ words[randint(0,s/10 - 1)] for i in xrange(s)] ]
+    # mod = NGramModel(4,'gte','none','n')
+    # profile.run("mod.train(corpus)")
+    # profile.run("mod.get_perplexity( corpus[0] )")
+    
+  corpus = ["hello i am a dog".split(" "), "i am a cat".split(" ")]
+  mod = NGramModel(2,'lap',None)
+  mod.train(corpus)
+  print exp(mod.get_prob("i am a pigeon".split(" ")))
+  print (mod.get_perplexity("i am a pigeon".split(" ")))
+  
   
 
