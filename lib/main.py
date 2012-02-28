@@ -7,7 +7,8 @@ smoothing_list = ['lap', 'gte'] # ['none', 'lap']
 unknown_list = ['first'] # ['none', 'first', 'once']
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
-random_sentence_length = 10
+random_sentence_length = 100
+stopping_punctuation = [".", "!"]
 
 print "==CS 4740 Project 1=="
 task = int(input("What task to perform? (random sentences=1, perplexity=2, author prediction=3) "))
@@ -33,7 +34,15 @@ if task == 1:
           ran = RandomSentence.RandomSentence(mod)
           with open('data/output/rand_sent/%d_%d_%s_%s.txt' % (i+1, ngram_num, smoothing_method,unknown_method), 'w') as f:
             for j in range(10):
-              f.write(' '.join(ran.gen_sentence(random_sentence_length)) + '\n')
+              sentence = ran.gen_sentence(random_sentence_length)
+              first = len(sentence)
+              for stop_word in stopping_punctuation:
+                try:
+                  first = min(first, sentence.index(stop_word)+1)
+                  sentence = sentence[:first]
+                except ValueError:
+                  pass # no match
+              f.write(' '.join(sentence) + '\n')
 
 # Perplexity
 elif task == 2:
