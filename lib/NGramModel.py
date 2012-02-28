@@ -113,6 +113,10 @@ class NGramModel():
         self.good_turing_discount_model();
   
   def get_rand_word( self, tup ):
+    if self.gram_type == "n":
+      tmp = ["<s>"]*(self.n-1)
+      tmp.extend(tup)
+      tup = tmp
     # Given n-1 words, get the n-th word
     head = tuple(tup[ -(self.n-1): ])
     if head in self.freq:
