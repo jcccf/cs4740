@@ -133,6 +133,15 @@ class WordParser(object):
     self._load_inv_frequencies()
     return self.inv_frequencies[n]
 
+  def num_new_words(self, words):
+    n = 0
+    old_set = set(self.words())
+    word_set = set(words)
+    for w in word_set:
+      if not w in old_set:
+        n += 1
+    return n
+
 class DocWordParser(WordParser):
   def __init__(self, filename):
     super(DocWordParser, self).__init__(filename)
