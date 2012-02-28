@@ -30,7 +30,7 @@ if task == 1:
       for ngram_num in ngram_list:
         for unknown_method in unknown_list:
           mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method, unknown_type=unknown_method)
-          mod.train([cor.words()])
+          mod.train(cor.docs_words())
           ran = RandomSentence.RandomSentence(mod)
           with open('data/output/rand_sent/%d_%d_%s_%s.txt' % (i+1, ngram_num, smoothing_method,unknown_method), 'w') as f:
             for j in range(10):

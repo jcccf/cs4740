@@ -87,6 +87,10 @@ class WordParser(object):
     # Return a list of list of words in order (each word list is a sentence)
     self._load_sentences()
     return self.sentence_list
+    
+  def docs_words(self):
+    self._load_sentences()
+    return self.sentence_list
 
   def _load_frequencies(self):
     if not self.frequencies:
@@ -148,6 +152,8 @@ class DocWordParser(WordParser):
       # Split into documents (only get parts within <TEXT>)
       docs = self.string.split('</TEXT>')
       docs = [d.split('<TEXT>')[1] for d in docs if '<TEXT>' in d]
+      lang_re = re.compile(r'(Language|Article Type): .*\n')
+      docs = [lang_re.sub('', d) for d in docs]
       brackets_re = re.compile(r'\[.*?\]') # Remove things in brackets as well
       docs = [brackets_re.sub('', d) for d in docs]
       docs = self._sanitize_list(docs)
@@ -182,6 +188,10 @@ class DocWordParser(WordParser):
     # Return a list of list of words in order (each word list is a sentence)
     self._load_docs()
     return self.document_list
+    
+  def docs_words(self):
+    self._load_docs()
+    return [list(itertools.chain.from_iterable(sentence_list)) for sentence_list in self.document_list]
   
 class EnronWordParser(WordParser):
   def __init__(self, filename):
