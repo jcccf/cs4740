@@ -154,7 +154,7 @@ class DocWordParser(WordParser):
       docs = [d.split('<TEXT>')[1] for d in docs if '<TEXT>' in d]
       lang_re = re.compile(r'(Language|Article Type)( )*:(.*)\n')
       docs = [lang_re.sub('', d) for d in docs]
-      brackets_re = re.compile(r'\[.*?\]') # Remove things in brackets as well
+      brackets_re = re.compile(r'\[(.|\n)*\]') # Remove things in brackets as well
       docs = [brackets_re.sub('', d) for d in docs]
       docs = self._sanitize_list(docs)
       
