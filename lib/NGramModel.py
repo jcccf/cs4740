@@ -1,13 +1,17 @@
-from random import random,randint
+from random import random,randint,choice
 from math import floor,log,exp
 from collections import deque
 import profile, string
 
 
 class NGramModel():
-  def __init__(self, n, smooth_type=None, unknown_type=None):
+  def __init__(self, n, smooth_type=None, unknown_type=None, gram_type="n"):
+    # Options:
+    #    gram_type:  "n" -> only n-tuples
+    #                "all" -> all 1 to n tuples
     # self.freq:  dict( word_list => (#occurrances, dict(word=>frequency) ) )
     self.freq = dict({tuple(): (0,dict())})
+    self.vocab = dict() # Explicitly store the vocab now
     self.n = n
     if smooth_type == None or smooth_type == 'none':
       self.smooth = self.no_smoothing
@@ -27,7 +31,7 @@ class NGramModel():
       self.unknown = self.unknown_once
     else:
       raise Exception("Invalid unknown function name")
-
+    self.gram_type = gram_type
   
   def unknown_none(self, corpus):
     return corpus
@@ -90,14 +94,18 @@ class NGramModel():
     unk_corpus = self.unknown(corpus)
     # corpus: list of documents, each document is a list of words
     for doc in unk_corpus:
-      lst = []
       nm1 = self.n-1
+      lst = [] if self.gram_type == "all" else ["<s>"]*nm1
       for w in doc:
+        self.vocab[w] = self.vocab.setdefault(w, 0) + 1
         lst = [] if self.n == 1 else lst[-nm1:]
         lst.append(w)
         assert len(lst) <= self.n
-        self.add_all_ntuple(lst)
-      while len(lst) > 0: # Add trailing words
+        if self.gram_type == "n":
+          self.add_ntuple(lst)
+        elif self.gram_type == "all":
+          self.add_all_ntuple(lst)
+      while (self.gram_type == "all") and len(lst) > 0: # Add trailing words
         lst = lst[1:]
         self.add_all_ntuple(lst)
     # If Good-Turing smoothing is used, adjust the counts in the model
@@ -171,14 +179,16 @@ class NGramModel():
       return v[pos]
   
   def vocab_size(self):
-    empty = tuple()
-    (count,d) = self.freq[empty]
-    return len(d)
+    return len(self.vocab)
+    # empty = tuple()
+    # (count,d) = self.freq[empty]
+    # return len(d)
     
   def vocab_dict(self):
-    empty = tuple()
-    (count,d) = self.freq[empty]
-    return d
+    return self.vocab
+    # empty = tuple()
+    # (count,d) = self.freq[empty]
+    # return d
   
   def laplacian_smoothing( self, head, tail ):
     # d=freq[head]
@@ -316,7 +326,7 @@ class NGramModel():
       vd = self.vocab_dict()
       str = map( lambda x: x if vd.has_key(x) else "<UNK>", str )
     acc = 0
-    cur = deque([], self.n)
+    cur = deque([] if self.gram_type == "all" else ["<s>"]*(self.n-1), self.n)
     for w in str:
       cur.append(w)
       assert len(cur) <= self.n
@@ -328,7 +338,7 @@ class NGramModel():
     return exp(-1.0/len(str) * self.get_prob(str,unknown_substituted))
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-  return ''.join(random.choice(chars) for x in range(size))
+  return ''.join(choice(chars) for x in range(size))
     
 if __name__ == "__main__":
   #mod = NGramModel(3,'lap')
@@ -345,11 +355,11 @@ if __name__ == "__main__":
   #print mod.laplacian_smoothing( [5], 3 )
   
   print "Speed test:"
-  sizes = [1000, 10000, 100000]
+  sizes = [1000]
   for s in sizes:
     words = dict( [ (i,id_generator()) for i in xrange(s/10) ] )
     corpus = [ [ words[randint(0,s/10 - 1)] for i in xrange(s)] ]
-    mod = NGramModel(4,'lap','none')
+    mod = NGramModel(4,'gte','none','n')
     profile.run("mod.train(corpus)")
     profile.run("mod.get_perplexity( corpus[0] )")
   
