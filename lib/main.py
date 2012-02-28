@@ -2,16 +2,16 @@ import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
 from math import exp
 import os
 
-ngram_list = [1, 2] # [1,2,3,4,5]
-smoothing_list = ['lap','gte'] # ['none', 'lap', 'gte']
-unknown_list = ['first','once'] # ['none', 'first', 'once']
+ngram_list = [1, 2, 3, 4, 5] # [1,2,3,4,5]
+smoothing_list = ['none'] # ['none', 'lap', 'gte']
+unknown_list = ['none'] # ['none', 'first', 'once']
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
 random_sentence_length = 100
 stopping_punctuation = [".", "!"]
 
 print "==CS 4740 Project 1=="
-task = int(input("What task to perform? (random sentences=1, perplexity=2, author prediction=3) "))
+task = int(input("What task to perform? (random sentences=1, perplexity=2, author prediction=3, kaggle=4) "))
 
 # Random Sentences
 if task == 1:
@@ -122,5 +122,38 @@ elif task == 3:
                 f.write('\n')
                 f2.write('%s\n' % predicted)
         print 'Accuracy:', (tp-0.0)/total, tp, total
+elif task == 4:
+  cor_val = WordParser.EnronWordParser('data/EnronDataset/validation.txt')
+  val_authors = [author for author, _ in cor_val.author_sentence_tuples()]
+  test_authors = []
+  with open('data/EnronDataset/test_solutions.txt', 'r') as f:
+    for l in f:
+      test_authors.append(l.strip())
+  assert len(val_authors) == 2024
+  assert len(test_authors) == 2024
+  
+  kag_files = []
+  import os
+  for dirname, dirnames, filenames in os.walk('data/Kaggle/'):
+    for filename in filenames:
+      fullpath = os.path.join(dirname, filename)
+      if '_kaggle' in fullpath:
+        kag_files.append((fullpath, filename))
+  
+  def num_correct(true, test):
+    correct = 0
+    for predicted, true in zip(true, test):
+      if predicted == true:
+        correct += 1
+    return correct
+    
+  for full_path, filename in kag_files:
+    with open(full_path, 'r') as f:
+      lines = [l.strip() for l in f.readlines()]
+      val_lines, test_lines = lines[:2024], lines[2024:]
+      assert len(val_lines) == 2024 and len(test_lines) == 2024
+      
+      print "%s %d %d" % (filename, num_correct(val_authors, val_lines), num_correct(test_authors, test_lines))
+    
 else:
   print "Invalid task chosen!"
