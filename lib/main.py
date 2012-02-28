@@ -3,8 +3,8 @@ from math import exp
 import os
 
 ngram_list = [1, 2] # [1,2,3,4,5]
-smoothing_list = ['none'] # ['none', 'lap', 'gte']
-unknown_list = ['none'] # ['none', 'first', 'once']
+smoothing_list = ['lap','gte'] # ['none', 'lap', 'gte']
+unknown_list = ['first','once'] # ['none', 'first', 'once']
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
 random_sentence_length = 100
