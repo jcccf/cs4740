@@ -13,7 +13,7 @@ class NGramModel():
     self.freq = dict({tuple(): (0,dict())})
     self.vocab = dict() # Explicitly store the vocab now
     self.n = n
-    self.vocab_expension = 0
+    self.vocab_expansion = 0
     if smooth_type == None or smooth_type == 'none':
       self.smooth = self.no_smoothing
     elif smooth_type == 'lap':
@@ -184,13 +184,19 @@ class NGramModel():
       return v[pos]
   
   def vocab_size(self):
-    return len(self.vocab) + self.vocab_expension
+    return len(self.vocab) + self.vocab_expansion
     # empty = tuple()
     # (count,d) = self.freq[empty]
     # return len(d)
   
   def set_vocab_expansion(self, val):
-    self.vocab_expension = val
+    self.vocab_expansion = val
+    
+  def expand_vocab(self, test):
+    st = set(test)
+    for w in st:
+      if not w in self.vocab:
+        self.vocab_expansion += 1
     
   def vocab_dict(self):
     return self.vocab

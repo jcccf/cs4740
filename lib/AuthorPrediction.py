@@ -21,7 +21,10 @@ class AuthorPrediction():
         result[name] = i+1
     else:
       for name, mod in self.author_model.iteritems():
+        if self.unknown_type == None or self.unknown_type == "none":
+          mod.expand_vocab(sentence)
         result[name] = mod.get_perplexity(sentence)
+        mod.set_vocab_expansion(0)
     if actual_label:
       rank = 1.0/(sorted(result, key=result.get).index(actual_label) + 1)
     else:
