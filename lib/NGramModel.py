@@ -330,7 +330,10 @@ class NGramModel():
     tup = tup[-self.n:]
     head = tup[:-1]
     tail = tup[-1]
-    return log(self.smooth(head,tail))
+    try:
+      return log(self.smooth(head,tail))
+    except:
+      return float("-inf")
   
   # P( w1 w2 ... wm ) = P(w1) P(w2 | w1) P(w3 | w1, w2) ... P(wn | w1,...,wn-1) P(wn+1 | w2,...,wn) ...
   def get_prob( self, str, unknown_substituted = False ):
