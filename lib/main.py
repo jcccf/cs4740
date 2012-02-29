@@ -1,6 +1,5 @@
-import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
+import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools, os
 from math import exp
-import os
 
 #
 # Parameters
@@ -9,9 +8,9 @@ import os
 # What type of n-grams to generate
 ngram_list = [1, 2, 3, 4, 5] # Possible: [1,2,3,4,5, and so on]
 # What kinds of smoothing to use
-smoothing_list = ['none'] # Possible: ['none', 'lap', 'gte']
+smoothing_list = ['none', 'lap', 'gte'] # Possible: ['none', 'lap', 'gte']
 # What method of handling unknowns should be used?
-unknown_list = ['none'] # Possible: ['none', 'first', 'once']
+unknown_list = ['none', 'first', 'once'] # Possible: ['none', 'first', 'once']
 
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
@@ -43,6 +42,7 @@ if task == 1:
     for smoothing_method in smoothing_list:
       for ngram_num in ngram_list:
         for unknown_method in unknown_list:
+          print "Training for %s, %d-gram, %s %s..." % (train_file, ngram_num, smoothing_method,unknown_method)
           mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method, unknown_type=unknown_method)
           mod.train(cor.docs_words())
           ran = RandomSentence.RandomSentence(mod)
@@ -77,6 +77,7 @@ elif task == 2:
       for smoothing_method in smoothing_list:
         for ngram_num in ngram_list:
           for unknown_method in unknown_list:
+            print "Training for %s, %d-gram, %s %s..." % (train_file, ngram_num, smoothing_method,unknown_method)
             mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method, unknown_type=unknown_method)
             # mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method)
             mod.train([cor.words()])
@@ -132,6 +133,7 @@ elif task == 3:
   for smoothing_method in smoothing_list:
     for ngram_num in ngram_list:
       for unknown_method in unknown_list:
+        print "Training for %d-gram, %s %s..." % (ngram_num, smoothing_method,unknown_method)
         ap = AuthorPrediction.AuthorPrediction(ngram_num, smooth_type=smoothing_method, unknown_type=unknown_method)
           
         print "Loading authors...",
@@ -156,6 +158,8 @@ elif task == 3:
                 f.write('\n')
                 f2.write('%s\n' % predicted)
         print 'Accuracy:', (tp-0.0)/total, tp, total
+        
+# Kaggle Accuracy!
 elif task == 4:
   cor_val = WordParser.EnronWordParser('data/EnronDataset/validation.txt')
   val_authors = [author for author, _ in cor_val.author_sentence_tuples()]
@@ -167,7 +171,7 @@ elif task == 4:
   assert len(test_authors) == 2024
   
   kag_files = []
-  import os
+
   for dirname, dirnames, filenames in os.walk('data/Kaggle/'):
     for filename in filenames:
       fullpath = os.path.join(dirname, filename)

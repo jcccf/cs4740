@@ -16,7 +16,7 @@ class AuthorPrediction():
     # Given the text, predict which author wrote it
     result = {}
     if len(sentence) == 0: # If the sentence is blank, predict some arbitrary author
-      print "Blank sentence received"
+      # print "Blank sentence received"
       for i, (name, _) in enumerate(self.author_model.iteritems()):
         result[name] = i+1
     else:
