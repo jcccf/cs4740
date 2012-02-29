@@ -2,13 +2,27 @@ import WordParser, NGramModel, RandomSentence, AuthorPrediction, itertools
 from math import exp
 import os
 
-ngram_list = [1, 2, 3, 4, 5] # [1,2,3,4,5]
-smoothing_list = ['none'] # ['none', 'lap', 'gte']
-unknown_list = ['none'] # ['none', 'first', 'once']
+#
+# Parameters
+#
+
+# What type of n-grams to generate
+ngram_list = [1, 2, 3, 4, 5] # Possible: [1,2,3,4,5, and so on]
+# What kinds of smoothing to use
+smoothing_list = ['none'] # Possible: ['none', 'lap', 'gte']
+# What method of handling unknowns should be used?
+unknown_list = ['none'] # Possible: ['none', 'first', 'once']
+
+
+
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
 random_sentence_length = 100
 stopping_punctuation = [".", "!"]
+
+#
+# DO NOT MODIFY FROM HERE ON
+#
 
 print "==CS 4740 Project 1=="
 task = int(input("What task to perform? (random sentences=1, perplexity=2, author prediction=3, kaggle=4) "))
