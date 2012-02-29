@@ -13,10 +13,10 @@ smoothing_list = ['none'] # Possible: ['none', 'lap', 'gte']
 # What method of handling unknowns should be used?
 unknown_list = ['none'] # Possible: ['none', 'first', 'once']
 
-
-
 train_list = ['data/fbis/fbis.train', 'data/wsj/wsj.train', 'data/Dataset3/Train.txt', 'data/Dataset4/Train.txt']
 test_list = ['data/fbis/fbis.test', 'data/wsj/wsj.test', 'data/Dataset3/Test.txt', 'data/Dataset4/Test.txt']
+# train_list = ['data/wsj/wsj.train', 'data/Dataset4/Train.txt']
+# test_list  = ['data/wsj/wsj.test', 'data/Dataset4/Test.txt']
 random_sentence_length = 100
 stopping_punctuation = [".", "!"]
 
@@ -66,7 +66,7 @@ elif task == 2:
     pass
 
   for i, (train_file, test_file) in enumerate(zip(train_list, test_list)):
-    if i <= 1:
+    if i <= 0:
       cor = WordParser.DocWordParser(train_file)
       test = WordParser.DocWordParser(test_file)
     else:
@@ -80,20 +80,40 @@ elif task == 2:
             mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method, unknown_type=unknown_method)
             # mod = NGramModel.NGramModel(ngram_num, smooth_type=smoothing_method)
             mod.train([cor.words()])
-            if i <= 1:
+            # mod.train(cor.sentences())
+            if i <= 0:
               # Per document perplexity
               with open('data/output/perplexity/%d_%d_%s_%s_doc.txt' % (i+1, ngram_num, smoothing_method,unknown_method), 'w') as f2:
               # with open('data/output/perplexity/%d_%d_%s_doc.txt' % (i+1, ngram_num, smoothing_method), 'w') as f2:
                 for doc in test.docs():
                   f2.write('%f\n' % mod.get_perplexity(list(itertools.chain.from_iterable(doc))))
+            if unknown_method == "none":
+              # n = cor.num_new_words(test.words())
+              # mod.set_vocab_expansion(n)
+              mod.expand_vocab(test.words())
+              # print "%d vs %d"%(n,mod.vocab_expansion)
+              # assert( n == mod.vocab_expansion )
+            # mod.good_turing_discount_model()
             f.write('%f %d %s\n' % (mod.get_perplexity(test.words()), ngram_num, smoothing_method))
+            mod.set_vocab_expansion(0)
+            # mod.reset_dict()
+            
             ####### cross perplexity computations ####
             for j, test_file in enumerate(test_list):
-              if j <= 1:
+              if j <= 0:
                 test2 = WordParser.DocWordParser(test_file)
               else:
                 test2 = WordParser.WordParser(test_file)
+              if unknown_method == "none":
+                # n = cor.num_new_words(test2.words())
+                # print "%s %s %d"%(train_file,test_file,n)
+                # mod.set_vocab_expansion(n)
+                mod.expand_vocab(test2.words())
+                # assert( n == mod.vocab_expansion )
+              # mod.good_turing_discount_model()
               f.write('cross%d %f %d %s %s\n' % (j+1, mod.get_perplexity(test2.words()), ngram_num, smoothing_method, unknown_method))
+              mod.set_vocab_expansion(0)
+              # mod.reset_dict()
             ####### cross perplexity computations ####  
 
 # Enron Author Prediction
