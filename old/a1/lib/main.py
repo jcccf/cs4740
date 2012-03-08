@@ -6,7 +6,7 @@ from math import exp
 #
 
 # What type of n-grams to generate
-ngram_list = [1, 2, 3, 4, 5] # Possible: [1,2,3,4,5, and so on]
+ngram_list = [1] # Possible: [1,2,3,4,5, and so on]
 # What kinds of smoothing to use
 smoothing_list = ['none', 'lap', 'gte'] # Possible: ['none', 'lap', 'gte']
 # What method of handling unknowns should be used?
