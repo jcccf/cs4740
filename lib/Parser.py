@@ -28,15 +28,23 @@ class Example:
       self.ca_tokenized = nltk.word_tokenize(self.context_after)     
   
   def word_positions(self, word):
-    '''Give all positions of a word in context'''
+    '''Give a list of all positions of a word in context relative to the target word (negative means it came before, positive means came after)'''
     self.__load_tokenized()
     pos = []
     pos += [-(i+1) for i, x in enumerate(self.cb_tokenized) if x == word]
     pos += [i+1 for i, x in enumerate(self.ca_tokenized) if x == word]
     return pos
     
+  def count_within_window(self, word, n=None):
+    '''Return the number of times a word appears within N words of the target word'''
+    if n is not None:
+      x = [1 for i in self.word_positions(word) if abs(i) <= n]
+    else:
+      x = self.word_positions(word)
+    return len(x)
+    
   def words_positions(self):
-    '''Give (position,word) tuples of all words in context'''
+    '''Give a list of (position,word) tuples of all words in context'''
     self.__load_tokenized()
     wp = []
     for i, w in enumerate(self.cb_tokenized):
@@ -45,7 +53,7 @@ class Example:
       wp.append(((i+1), w))
     return sorted(wp)
     
-def load_examples(filename):
+def load_examples(filename='data/wsd-data/train.data'):
   line_matcher = re.compile(r'([\w]+)\.([\w]+) ([0-9 ]+)@[ ]*(.*)@([\w]+)@(.*)')
   examples = []
   with open(filename, 'r') as f:
@@ -67,7 +75,7 @@ class Sense:
   def __repr__(self):
     return "Sense(synset=%s, gloss=%s)" % (self.synset, self.gloss)
 
-def load_dictionary(filename):
+def load_dictionary(filename="data/dictionary-mapping.xml"):
   parser = etree.XMLParser()
   with open(filename, 'r') as f:
     myfile = f.read()
@@ -85,12 +93,18 @@ def load_dictionary(filename):
   return dictionary
 
 if __name__ == '__main__':
-  egs = load_examples('data/wsd-data/train.data')
-  dictionary = load_dictionary("data/dictionary-mapping.xml")  
+  egs = load_examples()
+  dictionary = load_dictionary()  
 
   print egs[0].word
-  print egs[0].senses  
+  print egs[0].pos
+  print egs[0].senses
+  print egs[0].context_before
+  print egs[0].context_after
+  print "---"
   print egs[0].valid_senses(dictionary)
   print egs[0].all_senses(dictionary)
+  print "---"
   print egs[0].words_positions()
   print egs[0].word_positions('the')
+  print egs[0].count_within_window('the', 5)
