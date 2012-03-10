@@ -1,7 +1,7 @@
-import Parser, Baselinemostfrequentsense, os
+import Parser, Baselinemostfrequentsense, Disambiguation, os
 
 print "==CS 4740 Project 2=="
-task = int(input("select method: (baseline most frequent sense=1) "))
+task = int(input("select method: (baseline most frequent sense=1, classifier=2) "))
 
 if task == 1:
     try:
@@ -11,7 +11,7 @@ if task == 1:
     classifier = Baselinemostfrequentsense.Baselinemostfrequentsense()
     egs = Parser.load_examples()
     classifier.create_sensecounts(egs)
-    testdata = Parser.load_data('data/wsd-data/test.data')
+    testdata = Parser.load_test_data('data/wsd-data/test.data')
     with open('data/output/mostfreqsense.txt', 'w') as f:
         for testexample in testdata:
             prediction = classifier.predict_sense(testexample)
@@ -19,6 +19,7 @@ if task == 1:
                 f.write('%d\n' % element)
         f.close()
     print("done")
-    
+elif task == 2:
+    Disambiguation.disambiguate()    
         
     
