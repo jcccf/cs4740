@@ -92,6 +92,22 @@ def load_dictionary(filename="data/dictionary-mapping.xml"):
   
   return dictionary
 
+# Temporarily put here just to load the test data for use by some other code
+# To be deleted later
+def load_data(filename):
+  line_matcher = re.compile(r'([\w]+)\.([\w]+) ([0-9 ]+)@[ ]*(.*)@([\w]+)@(.*)')
+  examples = []
+  with open(filename, 'r') as f:
+    for l in f:
+      match_obj = line_matcher.match(l)
+      if match_obj:
+        word, pos, senses, context_before, target, context_after = match_obj.groups()
+        senses = [int(b) for b in senses.strip().split(' ')]
+        examples.append(Example(word, pos, senses, context_before, target, context_after))
+      else:
+        raise Exception("Example Regex Failed to Match on\n%s" % l)
+  return examples
+
 if __name__ == '__main__':
   egs = load_examples()
   dictionary = load_dictionary()  
