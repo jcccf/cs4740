@@ -1,6 +1,6 @@
 import nltk.classify.util
 from nltk.classify import NaiveBayesClassifier, DecisionTreeClassifier
-import Parser,sys,os
+import Parser,sys,os, string
 from nltk.classify.weka import ARFF_Formatter
 
 class weka_classifier:
@@ -29,7 +29,7 @@ class weka_classifier:
 
     def __stopwords_filter(self, words):
         # Filters out words in the stopwords list
-        return [ w for w in words if not w in self.stopwords ]
+        return [ w for w in words if not w in self.stopwords and not w in string.punctuation ]
 
     def __remove_words_in_dict(self, d, words):
         # Remove <words> from dictionary d
@@ -55,14 +55,14 @@ class weka_classifier:
         return new_fvec
 
     def __build_eg(self, eg):
-        # Applies features to example.  Currently, only co-occurance and 
+        # Applies features to example.  Currently, only co-occurence and 
         # target part-of-speech features are included
         d = dict()  # Sparse feature vector
         # POS feature
-        d["__POS_"+eg.pos+"__"] = True
+        d["__POS_"+eg.pos+"__"] = 1
         # Target feature
-        d["__TARGET_"+eg.target+"__"] = True
-        # co-occurance features:
+        d["__TARGET_"+eg.target+"__"] = 1
+        # co-occurence features:
         pre_words = eg.context_before.lower().split()
         post_words = eg.context_after.lower().split()
         if self.stopwords != None and len(self.stopwords) != 0:
@@ -77,6 +77,7 @@ class weka_classifier:
         else:
             self.__tovec(d, pre_words, "")
             self.__tovec(d, post_words, "")
+        d = dict(d.items() + eg.pos_positions())
         return d
 
     def prepare_examples(self,egs,use_str=False):
@@ -103,6 +104,13 @@ class weka_classifier:
             fname = save_dir + "%s_%d.arff"%(word,idx)
             fmt.write(fname, val)
 
+    def normalize_val(self, val):
+      val_new = []
+      for d, label in val:
+        sum_total = sum(d.values())
+        val_new.append(({k:float(v)/sum_total for k, v in d.iteritems()}, label))
+      return val_new
+
     def train(self,egs):
         # Trains a classifier for each word sense
         self.prepare_examples(egs)
@@ -111,6 +119,7 @@ class weka_classifier:
             sys.stdout.write(".")
             sys.stdout.flush()
             val = self.filter_non_discriminative(val)
+            #val = self.normalize_val(val)
             if self.classifier == nltk.ConditionalExponentialClassifier:
                 self.classifiers[key] = self.classifier.train(val, sparse=True, trace=0, max_iter=10)
             else:
@@ -137,8 +146,8 @@ class weka_classifier:
 
 if __name__ == '__main__':
     # classifier = weka_classifier(10,nltk.DecisionTreeClassifier)  # Does not work with sparse features
-    classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
-    # classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=False)
+    # classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
+    classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=False)
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
 
@@ -170,7 +179,7 @@ if __name__ == '__main__':
                     fp += 1
         prec = tp/(tp+fp)
         rec  = tp/(tp+fn)
-        f1   = 2.0*(prec*rec)/(prec+rec)
+        f1   = 2.0*(prec*rec)/(prec+rec) if (prec+rec) > 0 else 0
         print "%d, %d, %d, %d\n%f, %f, %f"%(tp,tn,fp,fn,prec,rec,f1)
     
     if False:

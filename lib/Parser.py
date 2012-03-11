@@ -24,16 +24,32 @@ class Example:
   def __load_tokenized(self):
     if self.cb_tokenized is None:
       self.cb_tokenized = nltk.word_tokenize(self.context_before)
-      self.cb_tokenized.reverse()
+      # self.cb_tokenized.reverse()
       self.ca_tokenized = nltk.word_tokenize(self.context_after)     
   
   def word_positions(self, word):
     '''Give a list of all positions of a word in context relative to the target word (negative means it came before, positive means came after)'''
     self.__load_tokenized()
     pos = []
-    pos += [-(i+1) for i, x in enumerate(self.cb_tokenized) if x == word]
+    cb_offset = len(self.cb_tokenized)
+    pos += [-(cb_offset-i) for i, x in enumerate(self.cb_tokenized) if x == word]
     pos += [i+1 for i, x in enumerate(self.ca_tokenized) if x == word]
     return pos
+    
+  def pos_positions(self, filter_punctuation=True):
+    self.__load_tokenized()
+    text = self.cb_tokenized + [self.target] + self.ca_tokenized
+    poses = nltk.pos_tag(text)
+    posf = []
+    cb_offset = len(self.cb_tokenized)
+    for i in range(len(self.cb_tokenized)):
+      posf.append((-(cb_offset-i), poses[i][1]))
+    offset = len(self.cb_tokenized) + 1
+    for i in range(len(self.ca_tokenized)):
+      posf.append((i+1, poses[offset+i][1]))
+    if filter_punctuation:
+      posf = [(a,b) for a,b in posf if b is not "."]
+    return posf
     
   def count_within_window(self, word, n=None):
     '''Return the number of times a word appears within N words of the target word'''
@@ -47,9 +63,10 @@ class Example:
     '''Give a list of (position,word) tuples of all words in context'''
     self.__load_tokenized()
     wp = []
+    cb_offset = len(self.cb_tokenized)
     for i, w in enumerate(self.cb_tokenized):
-      wp.append((-(i+1), w))
-    for i, w in enumerate(self.cb_tokenized):
+      wp.append((-(cb_offset-i), w))
+    for i, w in enumerate(self.ca_tokenized):
       wp.append(((i+1), w))
     return sorted(wp)
     
@@ -143,3 +160,4 @@ if __name__ == '__main__':
   print egs[0].words_positions()
   print egs[0].word_positions('the')
   print egs[0].count_within_window('the', 5)
+  print egs[0].pos_positions()
