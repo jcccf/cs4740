@@ -7,7 +7,11 @@ class weka_classifier:
     def __init__(self,window_size=-1,
             classifier=nltk.NaiveBayesClassifier,
             stopwords=nltk.corpus.stopwords.words('english'),
-            split_pre_post=True):
+            split_pre_post=True,     # Splits the words before and after into two feature sets
+            normalize_vec=False,     # Normalizes each feature vector to unit (L1) vectors
+            remove_infrequent=0.1,   # Removes infrequent words occuring in less than 0.1 percent of examples
+            pos_tags=False           # Use NLTK's part-of-speech tagger for context words
+            ):
         self.classifier = classifier
         self.window_size = window_size
         self.word_senses = dict()
@@ -15,6 +19,9 @@ class weka_classifier:
         self.classifiers = dict()  #trained models
         self.stopwords = stopwords
         self.split_pre_post = split_pre_post
+        self.normalize_vec = normalize_vec
+        self.remove_infrequent = remove_infrequent
+        self.pos_tags = pos_tags
         print self.classifier
 
     def __tovec(self, d, context, prefix):
@@ -38,7 +45,7 @@ class weka_classifier:
                 del d[w]
         return d
 
-    def filter_non_discriminative(self, fvec, limit=0.1):
+    def filter_infrequent(self, fvec, limit=0.1):
         # Filters out words that do not occur in more than <limit> of total examples
         d = dict()
         for f, label in fvec:
@@ -77,7 +84,8 @@ class weka_classifier:
         else:
             self.__tovec(d, pre_words, "")
             self.__tovec(d, post_words, "")
-        d = dict(d.items() + eg.pos_positions())
+        if self.pos_tags:
+            d = dict(d.items() + eg.pos_positions())
         return d
 
     def prepare_examples(self,egs,use_str=False):
@@ -108,7 +116,7 @@ class weka_classifier:
       val_new = []
       for d, label in val:
         sum_total = sum(d.values())
-        val_new.append(({k:float(v)/sum_total for k, v in d.iteritems()}, label))
+        val_new.append(( dict( [(k,float(v)/sum_total) for (k, v) in d.iteritems()] ), label))
       return val_new
 
     def train(self,egs):
@@ -118,8 +126,8 @@ class weka_classifier:
         for key,val in self.egs.iteritems():
             sys.stdout.write(".")
             sys.stdout.flush()
-            val = self.filter_non_discriminative(val)
-            #val = self.normalize_val(val)
+            val = self.filter_infrequent(val, self.remove_infrequent) if self.remove_infrequent > 0 else val
+            val = self.normalize_val(val) if self.normalize_vec else val
             if self.classifier == nltk.ConditionalExponentialClassifier:
                 self.classifiers[key] = self.classifier.train(val, sparse=True, trace=0, max_iter=10)
             else:
