@@ -1,5 +1,7 @@
 import random, sys
 
+random.seed(1234)
+
 if len(sys.argv) > 1:
     split = float(sys.argv[1])
 else:
