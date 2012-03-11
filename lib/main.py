@@ -34,16 +34,19 @@ elif task == 3 or task == 4:
             window_size=10,
             classifier=nltk.NaiveBayesClassifier,
             split_pre_post=False)
+        name = "NaiveBayes"
     elif task == 4:
         classifier = weka_classifier.weka_classifier(
             window_size=10,
             classifier=nltk.ConditionalExponentialClassifier,
             split_pre_post=False)
+        name = "MaxEnt"
 
     egs = Parser.load_examples()
     classifier.train(egs)
-    testdata = Parser.load_data('data/wsd-data/test.data')
-    with open('data/output/mostfreqsense.txt', 'w') as f:
+    #testdata = Parser.load_data('data/wsd-data/test.data')
+    testdata = Parser.load_test_data('data/wsd-data/test.data')
+    with open('data/output/%s.txt'%name, 'w') as f:
         for testexample in testdata:
             prediction = classifier.predict([testexample])
             for element in prediction:

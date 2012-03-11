@@ -28,4 +28,5 @@ def disambiguate():
         f.close()
     print("done")
 
-disambiguate()
+if __name__ == "__main__":
+    disambiguate()

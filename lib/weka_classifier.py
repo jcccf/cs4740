@@ -50,7 +50,7 @@ class weka_classifier:
                     d[w] = 1
         limit = float(limit) * len(fvec)
         removed_words = [ w for w,l in d.iteritems() if l < limit ]
-        print len(removed_words),"out of", len(d)
+        # print len(removed_words),"out of", len(d)
         new_fvec = [ (self.__remove_words_in_dict(f,removed_words), lab) for (f,lab) in fvec ]
         return new_fvec
 
@@ -60,6 +60,8 @@ class weka_classifier:
         d = dict()  # Sparse feature vector
         # POS feature
         d["__POS_"+eg.pos+"__"] = True
+        # Target feature
+        d["__TARGET_"+eg.target+"__"] = True
         # co-occurance features:
         pre_words = eg.context_before.lower().split()
         post_words = eg.context_after.lower().split()
@@ -77,7 +79,7 @@ class weka_classifier:
             self.__tovec(d, post_words, "")
         return d
 
-    def prepare_examples(self,egs):
+    def prepare_examples(self,egs,use_str=False):
         # Prepares the examples into training data, applying features etc.
         print "Preparing on %d examples"%len(egs),
         for eg in egs:
@@ -89,9 +91,9 @@ class weka_classifier:
                 self.word_senses[eg.word] = len(eg.senses)
             for idx, val in enumerate(eg.senses):
                 if (eg.word,idx) in self.egs:
-                    self.egs[(eg.word, idx)].append( (d, str(val)) )
+                    self.egs[(eg.word, idx)].append( (d, str(val) if use_str else val) )
                 else:
-                    self.egs[(eg.word, idx)] = [ (d,str(val)) ]
+                    self.egs[(eg.word, idx)] = [ (d,str(val) if use_str else val) ]
 
     def write_arff(self,save_dir):
         # Writes the data into (dense) ARFF files for use in WEKA
@@ -134,24 +136,45 @@ class weka_classifier:
 
 
 if __name__ == '__main__':
-#    classifier = weka_classifier(10,nltk.DecisionTreeClassifier)  # Does not work with sparse features
-#    classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
-    classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=False)
-    egs = Parser.load_examples()
+    # classifier = weka_classifier(10,nltk.DecisionTreeClassifier)  # Does not work with sparse features
+    classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
+    # classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=False)
+    egs = Parser.load_examples('data/wsd-data/train_split.data')
+    test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
 
     if True:
         classifier.train(egs)
 #       prediction = classifier.predict( egs[0:3] )
 #       print(prediction)
-        print "True labels vs predicted labels"
-        for eg in egs[0:3]:
-            print eg.word+" ",
-            print eg.senses,
-            print " vs ",
-            print classifier.predict([eg])
+        # print "True labels vs predicted labels"
+        tp = 0.0
+        fp = 0.0
+        tn = 0.0
+        fn = 0.0
+        for eg in test_egs:
+            # print eg.word+" ",
+            # print eg.senses,
+            # print " vs ",
+            # print classifier.predict([eg])
+            pred = classifier.predict([eg])
+            for (k,(s,p)) in enumerate(zip(eg.senses,pred)):
+                """ Word \t POS \t Sense # \t True label \t Predicted label """
+                print "%s\t%s\t%d\t%d\t%d"%(eg.word,eg.pos,k,s,p)
+                if s == 1 and p == 1:
+                    tp += 1
+                elif s == 0 and p == 0:
+                    tn += 1
+                elif s == 1 and p == 0:
+                    fn += 1
+                elif s == 0 and p == 1:
+                    fp += 1
+        prec = tp/(tp+fp)
+        rec  = tp/(tp+fn)
+        f1   = 2.0*(prec*rec)/(prec+rec)
+        print "%d, %d, %d, %d\n%f, %f, %f"%(tp,tn,fp,fn,prec,rec,f1)
     
     if False:
-        classifier.prepare_examples(egs)
+        classifier.prepare_examples(egs,use_str=True)
         try:
             os.makedirs('data/weka/')
         except:
