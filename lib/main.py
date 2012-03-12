@@ -14,7 +14,7 @@ if task == 1:
     classifier = Baselinemostfrequentsense.Baselinemostfrequentsense()
     egs = Parser.load_examples()
     classifier.create_sensecounts(egs)
-    testdata = Parser.load_test_data('data/wsd-data/test.data')
+    testdata = Parser.load_examples('data/wsd-data/test.data')
     with open('data/output/mostfreqsense.txt', 'w') as f:
         for testexample in testdata:
             prediction = classifier.predict_sense(testexample)
