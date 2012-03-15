@@ -1,4 +1,4 @@
-import Parser, sys, os, string
+import Parser, sys, os, string, MVectorizer
 
 from sklearn.feature_extraction.text import Vectorizer
 from sklearn.preprocessing import LabelBinarizer
@@ -18,10 +18,11 @@ import scipy.sparse as sps # sps.csr_matrix, sps.hstack
 class scikit_classifier:
     def __init__(self):
         self.vectorizers = dict()
+        self.pos_vectorizers = dict()
         self.classifiers = dict()
         pass
         
-    def prepare_examples(self,egs,verbose=False):
+    def prepare_examples(self, egs, verbose=False, pos_window_size=1):
         # Prepares the examples into training data, applying features etc.
         if verbose:
             print "Preparing on %d examples"%len(egs),
@@ -38,14 +39,14 @@ class scikit_classifier:
                 pos[eg.word] = []
             data[eg.word].append( eg.context_before + " " + eg.target + " " + eg.context_after )
             labels[eg.word].append( [ idx for idx,val in enumerate(eg.senses) if val == 1 ] )
-            pos[eg.word].append(eg.pos_positions(window=1))
+            pos[eg.word].append(eg.pos_positions(window=pos_window_size))
         # print pos
         # raise Exception()    
-        return (data,labels)
+        return (data, labels, pos)
 
     def train(self,egs):
         # Trains a classifier for each word sense
-        data,labels = self.prepare_examples(egs,verbose=True)
+        data,labels,pos = self.prepare_examples(egs,verbose=True)
         print "\nTraining on %d words"%len(data),
         for word in labels.iterkeys():
             sys.stdout.write(".")
@@ -53,6 +54,12 @@ class scikit_classifier:
             # Extract features
             self.vectorizers[word] = Vectorizer()
             X = self.vectorizers[word].fit_transform(data[word])
+            
+            # Add Parts of Speech
+            self.pos_vectorizers[word] = MVectorizer.ListsVectorizer()
+            X_pos = self.pos_vectorizers[word].fit_transform(pos[word])
+            X = sps.hstack((X, X_pos))
+            
             Y = labels[word]
             
             # Learn classifier
@@ -67,9 +74,15 @@ class scikit_classifier:
         res = []
         for eg in egs:
             eg.word = eg.word.lower()
-            data,labels = self.prepare_examples([eg])
+            data,labels,pos = self.prepare_examples([eg])
             X = self.vectorizers[eg.word].transform(data[eg.word])
+            
+            # Add Parts of Speech
+            X_pos = self.pos_vectorizers[eg.word].transform(pos[eg.word])
+            X = sps.hstack((X, X_pos))
+            
             Y = self.classifiers[eg.word].predict(X)
+            
             senses = [0]*len(eg.senses)
             for y in list(Y[0]):
                 senses[y] = 1

@@ -1,4 +1,4 @@
-import re, StringIO, nltk
+import re, StringIO, nltk, cPickle as pickle, hashlib
 from lxml import etree
 from lxml import html
 
@@ -12,6 +12,21 @@ class Example:
     self.target = target
     self.context_after = context_after
     self.ca_tokenized = None
+    self.cache()
+    
+  def cache(self):
+    filehash = hashlib.md5(self.target+self.context_before+self.context_after).hexdigest()
+    try:
+      s = pickle.load(open('data/pos/%s' % filehash, 'r'))
+      self.cb_tokenized = s['cb_tokenized']
+      self.ca_tokenized = s['ca_tokenized']
+      self.posf = s['posf']
+    except:
+      print "Caching Tokenizations and POS for %s" % self.target
+      self.__load_tokenized()
+      self.__load_pos()
+      s = {'cb_tokenized': self.cb_tokenized, 'ca_tokenized': self.ca_tokenized, 'posf': self.posf}
+      pickle.dump(s, open('data/pos/%s' % filehash, 'w'))
     
   def valid_senses(self, dicty):
     '''Return the valid senses of this particular word based on the senses binary list'''
@@ -29,23 +44,16 @@ class Example:
   
   def word_positions(self, word):
     '''Give a list of all positions of a word in context relative to the target word (negative means it came before, positive means came after)'''
-    self.__load_tokenized()
     pos = []
     cb_offset = len(self.cb_tokenized)
     pos += [-(cb_offset-i) for i, x in enumerate(self.cb_tokenized) if x == word]
     pos += [i+1 for i, x in enumerate(self.ca_tokenized) if x == word]
     return pos
-    
-  def pos_positions(self, filter_punctuation=True, window=None):
+  
+  def __load_pos(self):
     self.__load_tokenized()
-    if window:
-      cb_part = self.cb_tokenized[-window+3:]
-      ca_part = self.ca_tokenized[:window+3]
-      text = cb_part + [self.target] + ca_part
-      cb_len, ca_len = len(cb_part), len(ca_part)
-    else:
-      text = self.cb_tokenized + [self.target] + self.ca_tokenized
-      cb_len, ca_len = len(self.cb_tokenized), len(self.ca_tokenized)
+    text = self.cb_tokenized + [self.target] + self.ca_tokenized
+    cb_len, ca_len = len(self.cb_tokenized), len(self.ca_tokenized)
     poses = nltk.pos_tag(text)
     posf = []
     for i in range(cb_len):
@@ -53,6 +61,10 @@ class Example:
     offset = cb_len + 1
     for i in range(ca_len):
       posf.append((i+1, poses[offset+i][1]))
+    self.posf = posf
+  
+  def pos_positions(self, filter_punctuation=True, window=None):
+    posf = list(self.posf)
     if filter_punctuation:
       posf = [(a,b) for a,b in posf if b is not "."]
     if window:
