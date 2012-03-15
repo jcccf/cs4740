@@ -1,5 +1,4 @@
-#!/usr/bin/python
-import Parser,sys,os, string
+import Parser, sys, os, string
 
 from sklearn.feature_extraction.text import Vectorizer
 from sklearn.preprocessing import LabelBinarizer
@@ -14,6 +13,8 @@ from sklearn import metrics
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
 
+import scipy.sparse as sps # sps.csr_matrix, sps.hstack
+
 class scikit_classifier:
     def __init__(self):
         self.vectorizers = dict()
@@ -24,8 +25,7 @@ class scikit_classifier:
         # Prepares the examples into training data, applying features etc.
         if verbose:
             print "Preparing on %d examples"%len(egs),
-        data = dict()
-        labels = dict()
+        data, labels, pos = {}, {}, {}
         for eg in egs:
             if verbose:
                 sys.stdout.write(".")
@@ -35,9 +35,12 @@ class scikit_classifier:
             if not eg.word in data:
                 data[eg.word] = []
                 labels[eg.word] = []
+                pos[eg.word] = []
             data[eg.word].append( eg.context_before + " " + eg.target + " " + eg.context_after )
             labels[eg.word].append( [ idx for idx,val in enumerate(eg.senses) if val == 1 ] )
-            
+            pos[eg.word].append(eg.pos_positions(window=1))
+        # print pos
+        # raise Exception()    
         return (data,labels)
 
     def train(self,egs):

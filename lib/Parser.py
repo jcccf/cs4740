@@ -36,19 +36,27 @@ class Example:
     pos += [i+1 for i, x in enumerate(self.ca_tokenized) if x == word]
     return pos
     
-  def pos_positions(self, filter_punctuation=True):
+  def pos_positions(self, filter_punctuation=True, window=None):
     self.__load_tokenized()
-    text = self.cb_tokenized + [self.target] + self.ca_tokenized
+    if window:
+      cb_part = self.cb_tokenized[-window+3:]
+      ca_part = self.ca_tokenized[:window+3]
+      text = cb_part + [self.target] + ca_part
+      cb_len, ca_len = len(cb_part), len(ca_part)
+    else:
+      text = self.cb_tokenized + [self.target] + self.ca_tokenized
+      cb_len, ca_len = len(self.cb_tokenized), len(self.ca_tokenized)
     poses = nltk.pos_tag(text)
     posf = []
-    cb_offset = len(self.cb_tokenized)
-    for i in range(len(self.cb_tokenized)):
-      posf.append((-(cb_offset-i), poses[i][1]))
-    offset = len(self.cb_tokenized) + 1
-    for i in range(len(self.ca_tokenized)):
+    for i in range(cb_len):
+      posf.append((-(cb_len-i), poses[i][1]))
+    offset = cb_len + 1
+    for i in range(ca_len):
       posf.append((i+1, poses[offset+i][1]))
     if filter_punctuation:
       posf = [(a,b) for a,b in posf if b is not "."]
+    if window:
+      posf = [(a,b) for a,b in posf if abs(a) <= window]
     return posf
     
   def count_within_window(self, word, n=None):
@@ -145,3 +153,4 @@ if __name__ == '__main__':
   print egs[0].word_positions('the')
   print egs[0].count_within_window('the', 5)
   print egs[0].pos_positions()
+  print egs[0].pos_positions(window=2)
