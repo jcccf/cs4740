@@ -96,7 +96,10 @@ if __name__ == '__main__':
   b = {"goodbye": 3, "hello": 4, "morning": 5}
   c = {"night": 6}
   d = {"hello": 7, "goodbye": 8}
+  vec = DictsVectorizer()
+  print vec.fit_transform([a,b,c,d]).todense()
+  
   ax = [["bye", "hello", "bye"], ["goodbye", "hello", "morning"], ["night"], ["hello", "night", "night", "goodbye"]]
-  print dicts_to_csr([a,b,c,d]).todense()
-  print lists_to_csr(ax).todense()
-  print normalize(lists_to_csr(ax)).todense()
+  ved = ListsVectorizer()
+  print ved.fit_transform(ax).todense()
+  print normalize(ved.fit_transform(ax)).todense()
