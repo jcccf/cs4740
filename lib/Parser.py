@@ -1,6 +1,7 @@
 import re, StringIO, nltk, cPickle as pickle, hashlib
 from lxml import etree
 from lxml import html
+import os
 
 class Example:
   def __init__(self, word, pos, senses, context_before, target, context_after):
@@ -16,6 +17,10 @@ class Example:
     
   def cache(self):
     filehash = hashlib.md5(self.target+self.context_before+self.context_after).hexdigest()
+    try:
+      os.makedirs('data/pos/')
+    except:
+      pass
     try:
       s = pickle.load(open('data/pos/%s' % filehash, 'r'))
       self.cb_tokenized = s['cb_tokenized']
