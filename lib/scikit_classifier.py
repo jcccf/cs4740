@@ -12,21 +12,24 @@ from sklearn.utils.extmath import density
 from sklearn import metrics
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
+from NGramModel import NGramModel
 
 import scipy.sparse as sps # sps.csr_matrix, sps.hstack
 
 class scikit_classifier:
-    def __init__(self):
+    def __init__(self,pos_window_size=1,ngram_size=0):
         self.vectorizers = dict()
         self.pos_vectorizers = dict()
         self.classifiers = dict()
+        self.pos_window_size = pos_window_size
+        self.ngram_size = ngram_size
         pass
         
-    def prepare_examples(self, egs, verbose=False, pos_window_size=1):
+    def prepare_examples(self, egs, for_training=True, verbose=False):
         # Prepares the examples into training data, applying features etc.
         if verbose:
-            print "Preparing on %d examples"%len(egs),
-        data, labels, pos = {}, {}, {}
+            print "Preparing %d examples"%len(egs),
+        data, labels, pos, ngram, nsenses = {}, {}, {}, {}, {}
         for eg in egs:
             if verbose:
                 sys.stdout.write(".")
@@ -37,16 +40,33 @@ class scikit_classifier:
                 data[eg.word] = []
                 labels[eg.word] = []
                 pos[eg.word] = []
-            data[eg.word].append( eg.context_before + " " + eg.target + " " + eg.context_after )
-            labels[eg.word].append( [ idx for idx,val in enumerate(eg.senses) if val == 1 ] )
-            pos[eg.word].append(eg.pos_positions(window=pos_window_size))
+            text = eg.context_before + " " + eg.target + " " + eg.pos + " " + eg.context_after
+            data[eg.word].append( text )
+            label = [ idx for idx,val in enumerate(eg.senses) if val == 1 ]
+            labels[eg.word].append( label )
+            pos[eg.word].append(eg.pos_positions(window=self.pos_window_size))
+            if for_training and self.ngram_size > 0:
+                if eg.word not in nsenses:
+                    nsenses[eg.word] = len(eg.senses)
+                    for idx in range(0,len(eg.senses)):
+                        ngram[eg.word+str(idx)] = NGramModel(self.ngram_size, smooth_type="lap", unknown_type=None, gram_type="n")
+                for idx in label:
+                    key = eg.word+str(idx)
+                    assert key in ngram
+                    # Only laplacian smoothing and no unknowns allows incremental training
+                    ngram[key].train([text])
         # print pos
-        # raise Exception()    
-        return (data, labels, pos)
+        # raise Exception()
+        if for_training:
+            return (data, labels, pos, ngram, nsenses)
+        else:
+            return (data, labels, pos)
 
     def train(self,egs):
         # Trains a classifier for each word sense
-        data,labels,pos = self.prepare_examples(egs,verbose=True)
+        data,labels,pos,ngram,nsenses = self.prepare_examples(egs,verbose=True)
+        self.ngram = ngram
+        self.nsenses = nsenses
         print "\nTraining on %d words"%len(data),
         for word in labels.iterkeys():
             sys.stdout.write(".")
@@ -59,6 +79,15 @@ class scikit_classifier:
             self.pos_vectorizers[word] = MVectorizer.ListsVectorizer()
             X_pos = self.pos_vectorizers[word].fit_transform(pos[word])
             X = sps.hstack((X, X_pos))
+            
+            # Add NGram model
+            if self.ngram_size > 0:
+                num_senses = self.nsenses[word]
+                ngram_list = []
+                for sentence in data[word]:
+                    ngram_list.append( dict([ ( idx, self.ngram[word+str(idx)].get_perplexity(sentence,True) ) for idx in range(0,num_senses) ]) )
+                X_ngram = MVectorizer.DictsVectorizer().fit_transform(ngram_list)
+                X = sps.hstack((X, X_ngram))
             
             Y = labels[word]
             
@@ -74,12 +103,22 @@ class scikit_classifier:
         res = []
         for eg in egs:
             eg.word = eg.word.lower()
-            data,labels,pos = self.prepare_examples([eg])
+            data,labels,pos = self.prepare_examples([eg], for_training=False)
             X = self.vectorizers[eg.word].transform(data[eg.word])
             
             # Add Parts of Speech
             X_pos = self.pos_vectorizers[eg.word].transform(pos[eg.word])
             X = sps.hstack((X, X_pos))
+            
+            # Add NGram model
+            if self.ngram_size > 0:
+                num_senses = self.nsenses[eg.word]
+                assert num_senses == len(eg.senses)
+                ngram_list = []
+                for sentence in data[eg.word]:
+                    ngram_list.append( dict([ ( idx, self.ngram[eg.word+str(idx)].get_perplexity(sentence,True) ) for idx in range(0,num_senses) ]) )
+                X_ngram = MVectorizer.DictsVectorizer().fit_transform(ngram_list)
+                X = sps.hstack((X, X_ngram))
             
             Y = self.classifiers[eg.word].predict(X)
             
@@ -94,7 +133,7 @@ if __name__ == '__main__':
     # classifier = weka_classifier(10,nltk.DecisionTreeClassifier)  # Does not work with sparse features
     # classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
     # classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=True)
-    classifier = scikit_classifier()
+    classifier = scikit_classifier(pos_window_size=1,ngram_size=0)
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
 
