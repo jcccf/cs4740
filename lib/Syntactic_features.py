@@ -41,11 +41,11 @@ def parse_stanford_output(filename, word_list):
                         #print(l)
                         #print(word_list[word_list_index]+' '+word1+' '+word2)
                     if word_list[word_list_index] == word1:
-                        #synfeatures[word_list_index].append(relation)
+                        synfeatures[word_list_index].append(relation)
                         synfeatures[word_list_index].append(word2) 
                     elif word_list[word_list_index] == word2:
                         synfeatures[word_list_index].append(relation)
-                        #synfeatures[word_list_index].append(word1) 
+                        synfeatures[word_list_index].append(word1) 
                 else:
                     pass
     return synfeatures
