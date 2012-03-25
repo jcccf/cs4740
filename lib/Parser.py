@@ -73,7 +73,7 @@ class Example:
         self.lesk_vector = pickle.load(open('data/lesk/%s' % filehash, 'r'))
       except:
         self.lesk_vector = self.__load_lesk_vector(dicty)
-        pickle.dump(vec, open('data/lesk/%s' % filehash, 'w'))
+        pickle.dump(self.lesk_vector, open('data/lesk/%s' % filehash, 'w'))
     return self.lesk_vector
   
   def __load_lesk_vector(self, dicty):
@@ -85,7 +85,7 @@ class Example:
   
     # Generate WordSets of surrounding words
     other_sets = []
-    words = self.words_window(2)
+    words = self.words_window(5)
     for word, pos in words:
       print word, pos
       baseword = wn.morphy(word)
