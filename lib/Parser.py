@@ -85,16 +85,13 @@ class Example:
   
     # Generate WordSets of surrounding words
     other_sets = []
-    words = self.words_window(5)
+    words = self.words_window(1)
     for word, pos in words:
       print word, pos
       baseword = wn.morphy(word)
       if baseword is not None:
         pos = penn_to_wn(pos)
-        if pos is not None:
-          synsets = wn.synsets(baseword, pos=penn_to_wn(pos))
-        else:
-          synsets = wn.synsets(baseword)
+        synsets = wn.synsets(baseword, pos=pos) if pos is not None else wn.synsets(baseword)
         for synset in synsets:
           other_sets.append(WordSet(synset.definition))
   

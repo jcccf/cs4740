@@ -58,7 +58,7 @@ class scikit_classifier:
             #text = eg.context_before + " " + eg.target + " " + eg.context_after
             pre_words = eg.context_before.lower().split()[-self.window_size:]
             post_words = eg.context_after.lower().split()[:self.window_size]
-            text = ' '.join(pre_words) + ' ' + eg.target + ' '.join(post_words)
+            text = ' '.join(pre_words) + ' ' + eg.target + ' ' + ' '.join(post_words)
             data[eg.word].append( text )
             label = [ idx for idx,val in enumerate(eg.senses) if val == 1 ]
             labels[eg.word].append( label )
