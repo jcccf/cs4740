@@ -31,10 +31,12 @@ class scikit_classifier:
         pass
         
     def prepare_examples(self, egs, for_training=True, verbose=False):
+        dictionary = Parser.load_dictionary()
+      
         # Prepares the examples into training data, applying features etc.
         if verbose:
             print "Preparing %d examples"%len(egs),
-        data, labels, pos, ngram, nsenses, syntactic = {}, {}, {}, {}, {}, {}
+        data, labels, pos, ngram, nsenses, syntactic, lesky = {}, {}, {}, {}, {}, {}, {}
         if (self.use_syntactic_features and for_training):
                 word_list = Syntactic_features.prepare_file(self.training_file)
                 syn_train = Syntactic_features.parse_stanford_output(self.training_file, word_list)
@@ -49,6 +51,7 @@ class scikit_classifier:
                 data[eg.word] = []
                 labels[eg.word] = []
                 pos[eg.word] = []
+                lesky[eg.word] = []
                 if (self.use_syntactic_features and for_training):
                     syntactic[eg.word] = []
             # text = eg.context_before + " " + eg.target + " " + eg.pos + " " + eg.context_after
@@ -60,6 +63,7 @@ class scikit_classifier:
             label = [ idx for idx,val in enumerate(eg.senses) if val == 1 ]
             labels[eg.word].append( label )
             pos[eg.word].append(eg.pos_positions(window=self.pos_window_size))
+            lesky[eg.word].append(eg.lesk(dictionary))
             if (self.use_syntactic_features and for_training):
                 syntactic[eg.word].append(syn_train[syn_index])
                 syn_index += 1
@@ -76,13 +80,13 @@ class scikit_classifier:
         # print pos
         # raise Exception()
         if for_training:
-            return (data, labels, pos, ngram, nsenses, syntactic)
+            return (data, labels, pos, lesky, ngram, nsenses, syntactic)
         else:
-            return (data, labels, pos)
+            return (data, labels, pos, lesky)
 
     def train(self,egs):
         # Trains a classifier for each word sense
-        data,labels,pos,ngram,nsenses,syntactic = self.prepare_examples(egs,verbose=True)
+        data,labels,pos,lesky,ngram,nsenses,syntactic = self.prepare_examples(egs,verbose=True)
         self.ngram = ngram
         self.nsenses = nsenses
         print "\nTraining on %d words"%len(data),
@@ -113,6 +117,10 @@ class scikit_classifier:
                 X_ngram = MVectorizer.DictsVectorizer().fit_transform(ngram_list)
                 X = sps.hstack((X, X_ngram))
             
+            # Add Lesky
+            X_lesk = MVectorizer.rectangularize(lesky[word])
+            X = sps.hstack((X, X_lesk))
+            
             Y = labels[word]
             
             # Learn classifier
@@ -131,7 +139,7 @@ class scikit_classifier:
             syn_index = 0
         for eg in egs:
             eg.word = eg.word.lower()
-            data,labels,pos = self.prepare_examples([eg], for_training=False)
+            data,labels,pos,lesky = self.prepare_examples([eg], for_training=False)
             X = self.vectorizers[eg.word].transform(data[eg.word])
             
             # Add Parts of Speech
@@ -153,6 +161,10 @@ class scikit_classifier:
                     ngram_list.append( dict([ ( idx, self.ngram[eg.word+str(idx)].get_perplexity(sentence,True) ) for idx in range(0,num_senses) ]) )
                 X_ngram = MVectorizer.DictsVectorizer().fit_transform(ngram_list)
                 X = sps.hstack((X, X_ngram))
+                
+            # Add Lesky
+            X_lesk = MVectorizer.rectangularize(lesky[eg.word])
+            X = sps.hstack((X, X_lesk))
             
             Y = self.classifiers[eg.word].predict(X)
             

@@ -1,4 +1,5 @@
 from scipy.sparse import csr_matrix
+import numpy as np
 from sklearn.preprocessing import Normalizer
 from collections import Counter
 
@@ -54,6 +55,9 @@ class DictsVectorizer(object):
       raise Exception("Nothing fitted yet!")
     return self.dicts_to_csr_transform(dicts)
 
+def rectangularize(list_of_vectors):
+  return np.array(list_of_vectors)
+
 class ListsVectorizer(DictsVectorizer):
   '''Converts Lists into a CSR Sparse Matrix'''
   '''Example: [['hi', 'bye', 'bye'], ['cool', 'bye']] is transformed into'''
@@ -98,6 +102,12 @@ if __name__ == '__main__':
   d = {"hello": 7, "goodbye": 8}
   vec = DictsVectorizer()
   print vec.fit_transform([a,b,c,d]).todense()
+  
+  import scipy.sparse as sps
+  mat = vec.fit_transform([a,b,c,d])
+  arr = np.array([[1,2],[3,4],[5,6],[7,8]])
+  print arr
+  print sps.hstack((mat, arr)).todense()
   
   ax = [["bye", "hello", "bye"], ["goodbye", "hello", "morning"], ["night"], ["hello", "night", "night", "goodbye"]]
   ved = ListsVectorizer()
