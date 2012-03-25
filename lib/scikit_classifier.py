@@ -1,4 +1,4 @@
-import Parser, sys, os, string, MVectorizer
+import Parser, sys, os, string, MVectorizer, Syntactic_features
 
 from sklearn.feature_extraction.text import Vectorizer
 from sklearn.preprocessing import LabelBinarizer
@@ -17,19 +17,28 @@ from NGramModel import NGramModel
 import scipy.sparse as sps # sps.csr_matrix, sps.hstack
 
 class scikit_classifier:
-    def __init__(self,pos_window_size=1,ngram_size=0):
+    def __init__(self,pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0,training_file='data/wsd-data/train_split.data',test_file='data/wsd-data/valiation_split.data'):
         self.vectorizers = dict()
         self.pos_vectorizers = dict()
+        self.syn_vectorizers = dict()
         self.classifiers = dict()
         self.pos_window_size = pos_window_size
         self.ngram_size = ngram_size
+        self.use_syntactic_features = use_syntactic_features
+        self.window_size = window_size
+        self.training_file = training_file
+        self.test_file = test_file
         pass
         
     def prepare_examples(self, egs, for_training=True, verbose=False):
         # Prepares the examples into training data, applying features etc.
         if verbose:
             print "Preparing %d examples"%len(egs),
-        data, labels, pos, ngram, nsenses = {}, {}, {}, {}, {}
+        data, labels, pos, ngram, nsenses, syntactic = {}, {}, {}, {}, {}, {}
+        if (self.use_syntactic_features and for_training):
+                word_list = Syntactic_features.prepare_file(self.training_file)
+                syn_train = Syntactic_features.parse_stanford_output(self.training_file, word_list)
+                syn_index = 0
         for eg in egs:
             if verbose:
                 sys.stdout.write(".")
@@ -40,12 +49,20 @@ class scikit_classifier:
                 data[eg.word] = []
                 labels[eg.word] = []
                 pos[eg.word] = []
+                if (self.use_syntactic_features and for_training):
+                    syntactic[eg.word] = []
             # text = eg.context_before + " " + eg.target + " " + eg.pos + " " + eg.context_after
-            text = eg.context_before + " " + eg.target + " " + eg.context_after
+            #text = eg.context_before + " " + eg.target + " " + eg.context_after
+            pre_words = eg.context_before.lower().split()[-self.window_size:]
+            post_words = eg.context_after.lower().split()[:self.window_size]
+            text = ' '.join(pre_words) + ' ' + eg.target + ' '.join(post_words)
             data[eg.word].append( text )
             label = [ idx for idx,val in enumerate(eg.senses) if val == 1 ]
             labels[eg.word].append( label )
             pos[eg.word].append(eg.pos_positions(window=self.pos_window_size))
+            if (self.use_syntactic_features and for_training):
+                syntactic[eg.word].append(syn_train[syn_index])
+                syn_index += 1
             if for_training and self.ngram_size > 0:
                 if eg.word not in nsenses:
                     nsenses[eg.word] = len(eg.senses)
@@ -59,13 +76,13 @@ class scikit_classifier:
         # print pos
         # raise Exception()
         if for_training:
-            return (data, labels, pos, ngram, nsenses)
+            return (data, labels, pos, ngram, nsenses, syntactic)
         else:
             return (data, labels, pos)
 
     def train(self,egs):
         # Trains a classifier for each word sense
-        data,labels,pos,ngram,nsenses = self.prepare_examples(egs,verbose=True)
+        data,labels,pos,ngram,nsenses,syntactic = self.prepare_examples(egs,verbose=True)
         self.ngram = ngram
         self.nsenses = nsenses
         print "\nTraining on %d words"%len(data),
@@ -80,6 +97,12 @@ class scikit_classifier:
             self.pos_vectorizers[word] = MVectorizer.ListsVectorizer()
             X_pos = self.pos_vectorizers[word].fit_transform(pos[word])
             X = sps.hstack((X, X_pos))
+         
+            # Add Syntactic dependencies
+            if (self.use_syntactic_features):
+                self.syn_vectorizers[word] = MVectorizer.ListsVectorizer()
+                X_syn = self.syn_vectorizers[word].fit_transform(syntactic[word])
+                X = sps.hstack((X, X_syn))
             
             # Add NGram model
             if self.ngram_size > 0:
@@ -102,6 +125,10 @@ class scikit_classifier:
     def predict(self, egs):
         # Given a list of examples, predict their word senses
         res = []
+        if (self.use_syntactic_features):
+            word_list = Syntactic_features.prepare_file(self.test_file)
+            syntactic = Syntactic_features.parse_stanford_output(self.test_file, word_list)
+            syn_index = 0
         for eg in egs:
             eg.word = eg.word.lower()
             data,labels,pos = self.prepare_examples([eg], for_training=False)
@@ -110,6 +137,12 @@ class scikit_classifier:
             # Add Parts of Speech
             X_pos = self.pos_vectorizers[eg.word].transform(pos[eg.word])
             X = sps.hstack((X, X_pos))
+            
+            # Add Syntactic dependencies
+            if (self.use_syntactic_features):
+                X_syn = self.syn_vectorizers[eg.word].transform([syntactic[syn_index]])
+                X = sps.hstack((X, X_syn))
+                syn_index += 1
             
             # Add NGram model
             if self.ngram_size > 0:
@@ -134,7 +167,7 @@ if __name__ == '__main__':
     # classifier = weka_classifier(10,nltk.DecisionTreeClassifier)  # Does not work with sparse features
     # classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
     # classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=True)
-    classifier = scikit_classifier(pos_window_size=1,ngram_size=0)
+    classifier = scikit_classifier(pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0)
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
 
@@ -156,7 +189,7 @@ if __name__ == '__main__':
             # print pred
             for (k,(s,p)) in enumerate(zip(eg.senses,pred)):
                 """ Word \t POS \t Sense # \t True label \t Predicted label """
-                print "%s\t%s\t%d\t%d\t%d"%(eg.word,eg.pos,k,s,p)
+                #print "%s\t%s\t%d\t%d\t%d"%(eg.word,eg.pos,k,s,p)
                 if s == 1 and p == 1:
                     tp += 1
                 elif s == 0 and p == 0:
