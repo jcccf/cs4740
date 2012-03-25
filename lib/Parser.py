@@ -1,9 +1,42 @@
-import re, StringIO, nltk, cPickle as pickle, hashlib
+import re, StringIO, nltk, cPickle as pickle, hashlib, string
+from nltk.corpus import wordnet as wn
 from lxml import etree
 from lxml import html
 import os
 
+try:
+  os.makedirs('data/lesk/')
+  os.makedirs('data/pos/')
+except:
+  pass
+
+wordnet_tags = {'NN':wn.NOUN,'JJ':wn.ADJ,'VB':wn.VERB,'RB':wn.ADV}
+def penn_to_wn(penn_tag):
+  if penn_tag[:2] in wordnet_tags:
+    return wordnet_tags[penn_tag[:2]]
+  else:
+    return None
+
+class WordSet:
+  tokenizer = nltk.tokenize.RegexpTokenizer('[^\w\']+', gaps=True)
+
+  def __init__(self, words):
+    words = WordSet.tokenizer.tokenize(words)
+    self.words = [w for w in words if w not in Example.stopwords]
+    
+  def overlap(self, other_sets):
+    count = 0
+    for other_set in other_sets:
+      for word in other_set.words:
+        if word in self.words:
+          count += 1
+    total_words = sum([len(other_set.words) for other_set in other_sets])
+    return (count, total_words)
+
 class Example:
+  
+  stopwords = nltk.corpus.stopwords.words('english')
+  
   def __init__(self, word, pos, senses, context_before, target, context_after):
     self.word = word
     self.pos = pos
@@ -13,14 +46,14 @@ class Example:
     self.target = target
     self.context_after = context_after
     self.ca_tokenized = None
+    self.lesk_vector = None
     self.cache()
-    
+  
+  def hash(self):
+    return hashlib.md5(self.target+self.context_before+self.context_after).hexdigest()
+  
   def cache(self):
     filehash = hashlib.md5(self.target+self.context_before+self.context_after).hexdigest()
-    try:
-      os.makedirs('data/pos/')
-    except:
-      pass
     try:
       s = pickle.load(open('data/pos/%s' % filehash, 'r'))
       self.cb_tokenized = s['cb_tokenized']
@@ -32,7 +65,59 @@ class Example:
       self.__load_pos()
       s = {'cb_tokenized': self.cb_tokenized, 'ca_tokenized': self.ca_tokenized, 'posf': self.posf}
       pickle.dump(s, open('data/pos/%s' % filehash, 'w'))
-    
+      
+  def lesk(self, dicty):
+    if self.lesk_vector is None:
+      filehash = self.hash()
+      try:
+        self.lesk_vector = pickle.load(open('data/lesk/%s' % filehash, 'r'))
+      except:
+        self.lesk_vector = self.__load_lesk_vector(dicty)
+        pickle.dump(vec, open('data/lesk/%s' % filehash, 'w'))
+    return self.lesk_vector
+  
+  def __load_lesk_vector(self, dicty):
+    '''Return overlaps of each sense with senses of surrounding words (window size of 2)
+      Stopwords are ignored, and results are normalized to the maximum overlap observed
+      Note that the size of the sense vector returned is 1 less, because index 0 was reserved for an unknown sense'''
+    # print example.word, example.pos, example.target
+    # print example.senses
+  
+    # Generate WordSets of surrounding words
+    other_sets = []
+    words = self.words_window(2)
+    for word, pos in words:
+      print word, pos
+      baseword = wn.morphy(word)
+      if baseword is not None:
+        pos = penn_to_wn(pos)
+        if pos is not None:
+          synsets = wn.synsets(baseword, pos=penn_to_wn(pos))
+        else:
+          synsets = wn.synsets(baseword)
+        for synset in synsets:
+          other_sets.append(WordSet(synset.definition))
+  
+    # for sety in other_sets:
+    #   print sety.words
+  
+    # Loop through possible wordsets and note counts:
+    counts = []
+    for sense in self.all_senses(dicty):
+      curr_set = WordSet(sense.gloss)
+      # print curr_set.words
+      counts.append(curr_set.overlap(other_sets))
+    # print counts
+  
+    # Normalize and return
+    countfirsts = [count[0] for count in counts]
+    countfirsts_max = max(countfirsts)
+    if countfirsts_max > 0:
+      return [float(count)/countfirsts_max for count in countfirsts]
+    else:
+      return [0.0 for count in countfirsts]
+
+  
   def valid_senses(self, dicty):
     '''Return the valid senses of this particular word based on the senses binary list'''
     return [d for i, d in enumerate(dicty['%s.%s' % (self.word, self.pos)]) if self.senses[i] == 1]
@@ -54,6 +139,21 @@ class Example:
     pos += [-(cb_offset-i) for i, x in enumerate(self.cb_tokenized) if x == word]
     pos += [i+1 for i, x in enumerate(self.ca_tokenized) if x == word]
     return pos
+    
+  def words_window(self, size=2, remove_stopwords=True):
+    words = []
+    lencb = len(self.cb_tokenized)
+    lenca = len(self.ca_tokenized)
+    for i in range(size):
+      if len(self.cb_tokenized) > i:
+        word = self.cb_tokenized[-(i+1)].lower()
+        if word not in string.punctuation and word not in Example.stopwords:
+          words.append((word, self.posf[lencb-1-i][1]))
+      if len(self.ca_tokenized) > i:
+        word = self.ca_tokenized[i].lower()
+        if word not in string.punctuation and word not in Example.stopwords:
+          words.append((word, self.posf[lencb+i][1]))
+    return words
   
   def __load_pos(self):
     self.__load_tokenized()
@@ -153,21 +253,25 @@ def load_training_data(filename):
         raise Exception("Example Regex Failed to Match on\n%s" % l)
   return dictexamples
 
+
 if __name__ == '__main__':
   egs = load_examples()
-  dictionary = load_dictionary()  
+  dictionary = load_dictionary()
+  
+  for eg in egs:
+    print eg.lesk(dictionary)
 
-  print egs[0].word
-  print egs[0].pos
-  print egs[0].senses
-  print egs[0].context_before
-  print egs[0].context_after
-  print "---"
-  print egs[0].valid_senses(dictionary)
-  print egs[0].all_senses(dictionary)
-  print "---"
-  print egs[0].words_positions()
-  print egs[0].word_positions('the')
-  print egs[0].count_within_window('the', 5)
-  print egs[0].pos_positions()
-  print egs[0].pos_positions(window=2)
+  # print egs[0].word
+  # print egs[0].pos
+  # print egs[0].senses
+  # print egs[0].context_before
+  # print egs[0].context_after
+  # print "---"
+  # print egs[0].valid_senses(dictionary)
+  # print egs[0].all_senses(dictionary)
+  # print "---"
+  # print egs[0].words_positions()
+  # print egs[0].word_positions('the')
+  # print egs[0].count_within_window('the', 5)
+  # print egs[0].pos_positions()
+  # print egs[0].pos_positions(window=2)
