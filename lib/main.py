@@ -2,15 +2,17 @@
 import Parser, Baselinemostfrequentsense, Disambiguation, os
 import weka_classifier
 import nltk.classify
+import scikit_classifier
 
 print "==CS 4740 Project 2=="
-task = int(input("select method: (baseline most frequent sense=1, classifier=2, naive_bayes=3, max_ent=4) "))
+task = int(input("select method: (baseline most frequent sense=1, classifier=2, naive_bayes=3, max_ent=4, scikit=5) "))
 
+try:
+    os.makedirs('data/output/')
+except:
+    pass
+    
 if task == 1:
-    try:
-        os.makedirs('data/output/')
-    except:
-        pass
     classifier = Baselinemostfrequentsense.Baselinemostfrequentsense()
     egs = Parser.load_examples()
     classifier.create_sensecounts(egs)
@@ -25,10 +27,6 @@ if task == 1:
 elif task == 2:
     Disambiguation.disambiguate()    
 elif task == 3 or task == 4:
-    try:
-        os.makedirs('data/output/')
-    except:
-        pass
     if task == 3:
         classifier = weka_classifier.weka_classifier(
             window_size=10,
@@ -53,6 +51,35 @@ elif task == 3 or task == 4:
                 f.write('%d\n' % element)
         f.close()
     print("done")
-
-        
+elif task == 5:
+    name = "scikit_test_pos1_ngram0"
+    classifier = scikit_classifier.scikit_classifier(
+        pos_window_size=1,ngram_size=0)
+    egs = Parser.load_examples('data/wsd-data/train.data')
+    test_egs = Parser.load_examples('data/wsd-data/test.data')
     
+    # Train the classifier(s)
+    classifier.train(egs)
+    with open('data/output/%s.txt'%name, 'w') as f:
+        for eg in test_egs:
+            pred = classifier.predict([eg])
+            for p in pred:
+                f.write("%d\n"%p)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

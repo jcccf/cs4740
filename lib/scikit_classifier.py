@@ -40,7 +40,8 @@ class scikit_classifier:
                 data[eg.word] = []
                 labels[eg.word] = []
                 pos[eg.word] = []
-            text = eg.context_before + " " + eg.target + " " + eg.pos + " " + eg.context_after
+            # text = eg.context_before + " " + eg.target + " " + eg.pos + " " + eg.context_after
+            text = eg.context_before + " " + eg.target + " " + eg.context_after
             data[eg.word].append( text )
             label = [ idx for idx,val in enumerate(eg.senses) if val == 1 ]
             labels[eg.word].append( label )
