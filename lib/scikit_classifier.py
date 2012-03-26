@@ -131,6 +131,12 @@ class scikit_classifier:
             if self.use_lesk:
               X_lesk = MVectorizer.rectangularize(lesky[word])
               X = sps.hstack((X, X_lesk))
+              
+            # Add Lesky Words
+            if self.use_lesk_words:
+              self.lesky_words_vectorizers[word] = Vectorizer()
+              X_leskwords = self.lesky_words_vectorizers[word].fit_transform(lesky_words[word])
+              X = sps.hstack((X, X_leskwords))
             
             Y = labels[word]
             
@@ -177,6 +183,11 @@ class scikit_classifier:
             if self.use_lesk:
               X_lesk = MVectorizer.rectangularize(lesky[eg.word])
               X = sps.hstack((X, X_lesk))
+              
+            # Add Lesky Words
+            if self.use_lesk_words:
+              X_leskywords = self.lesky_words_vectorizers[eg.word].transform(lesky_words[eg.word])
+              X = sps.hstack((X, X_leskywords))
             
             Y = self.classifiers[eg.word].predict(X)
             
@@ -197,6 +208,8 @@ if __name__ == '__main__':
                   action="store", type="int", dest="window_size", default=3)
     optParser.add_option("--use_syntactic_features", help="Use syntactic features?",
                   action="store", type="int", dest="use_syntactic_features", default=0)
+    optParser.add_option("--use_lesk", action="store_true", dest="use_lesk", default=False)
+    optParser.add_option("--use_lesk_words", action="store_true", dest="use_lesk_words", default=False)
 
     (options,args) = optParser.parse_args()
     print options
@@ -209,7 +222,8 @@ if __name__ == '__main__':
                     ngram_size = options.ngram_size,
                     window_size = options.window_size,
                     use_syntactic_features = options.use_syntactic_features,
-                    use_lesk=False)
+                    use_lesk = options.use_lesk,
+                    use_lesk_words = options.use_lesk_words)
 
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
