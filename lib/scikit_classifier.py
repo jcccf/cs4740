@@ -110,41 +110,44 @@ class scikit_classifier:
                 # syn_vectorizer = self.syn_vectorizers[word]
                 # syn_len = syn_vectorizer.transform([""]).shape[1]
             
-            # total_len = context_len + pos_len
-            total_len = context_len
+            total_len = context_len + pos_len
+            # total_len = context_len
             
             for sense_id,classifier in enumerate(classifiers.estimators_):
                 coeff = classifier.coef_.tolist()[0]
                 
+                ## Context features
                 # Find the feature with the highest (abs) weight
-                coeff = [abs(x) for x in (coeff[:total_len]) ]
-                feature_value = max(coeff)
-                maxid = coeff.index(feature_value)
+                head = coeff[:context_len]
+                coeff = coeff[context_len:]
                 
-                if maxid < context_len:
-                    # Find the feature key
-                    feature_key = context_vectorizer.inverse_transform(
-                        csr_matrix( ([1], ([0], [maxid])), shape=(1,context_len) ))[0][0]
-                    lst.append( (word,sense_id,feature_key,feature_value) )
-                    # print lst
-                    # return None
-                    continue
-                else:
-                    maxid -= context_len
+                abshead = [abs(x) for x in head]
+                feature_value = max(abshead)
+                maxid = abshead.index(feature_value)
+                feature_value = head[maxid]
+                assert maxid < context_len
+                # Find the feature key
+                feature_key = context_vectorizer.inverse_transform(
+                    csr_matrix( ([1], ([0], [maxid])), shape=(1,context_len) ))[0][0]
+                context_key,context_val = (feature_key,feature_value)
                 
-                if maxid < pos_len:
-                    # Find the feature key
-                    feature_key = pos_vectorizer.inverse_transform(
-                        csr_matrix( ([1], ([0], [maxid])), shape=(1,pos_len) ))[0][0]
-                    lst.append( (word,sense_id,"POS::"+feature_key,feature_value) )
-                    # print lst
-                    # return None
-                    continue
-                else:
-                    maxid -= pos_len
+                ## POS features
+                # Find the feature with the highest (abs) weight
+                head = coeff[:pos_len]
+                coeff = coeff[pos_len:]
+                
+                abshead = [abs(x) for x in head]
+                feature_value = max(abshead)
+                maxid = abshead.index(feature_value)
+                feature_value = head[maxid]
+                assert maxid < pos_len
+                # Find the feature key
+                feature_key = pos_vectorizer.inverse_transform(
+                    csr_matrix( ([1], ([0], [maxid])), shape=(1,pos_len) ))[0][0]
+                pos_key,pos_val = (feature_key,feature_value)
                 
                 # If it gets here, it isn't a feature that I know of..
-                lst.append( (word,sense_id,maxid,feature_value) )
+                lst.append( (word,sense_id,context_key,context_val,pos_key,pos_val) )
         return lst
 
     def train(self,egs):
@@ -288,9 +291,11 @@ if __name__ == '__main__':
     classifier.train(egs)
     
     if options.most_informative_features:
-        print "Most informative features (Word, sense_id, context_word, svm_weight):"
-        for (word,sense_id,feature_key,feature_value) in classifier.most_informative_features():
-            print word,sense_id,feature_key,feature_value
+        print "Most informative features (Word, sense_id, context_word, svm_weight, pos_word, svm_weight):"
+        for (word,sense_id,context_key,context_val,pos_key,pos_val) in classifier.most_informative_features():
+            print word,sense_id,context_key,context_val,pos_key,pos_val
+        sys.stdout.flush()
+        exit(0)
 
     # prediction = classifier.predict( egs[0:3] )
     # print(prediction)
