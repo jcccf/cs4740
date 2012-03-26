@@ -1,4 +1,5 @@
 import Parser, sys, os, string, MVectorizer, Syntactic_features
+from optparse import OptionParser
 
 from sklearn.feature_extraction.text import Vectorizer
 from sklearn.preprocessing import LabelBinarizer
@@ -187,10 +188,29 @@ class scikit_classifier:
 
 
 if __name__ == '__main__':
+    optParser = OptionParser()
+    optParser.add_option("--pos_ws", help="Part-of-speech window size",
+                  action="store", type="int", dest="pos_window_size", default=1)
+    optParser.add_option("--ngram", help="Ngram size",
+                  action="store", type="int", dest="ngram_size", default=0)
+    optParser.add_option("--ws", help="Context window size",
+                  action="store", type="int", dest="window_size", default=3)
+    optParser.add_option("--use_syntactic_features", help="Use syntactic features?",
+                  action="store", type="int", dest="use_syntactic_features", default=0)
+
+    (options,args) = optParser.parse_args()
+    print options
     # classifier = weka_classifier(10,nltk.DecisionTreeClassifier)  # Does not work with sparse features
     # classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
     # classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=True)
-    classifier = scikit_classifier(pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0,use_lesk=False)
+
+    classifier = scikit_classifier(
+                    pos_window_size = options.pos_window_size,
+                    ngram_size = options.ngram_size,
+                    window_size = options.window_size,
+                    use_syntactic_features = options.use_syntactic_features,
+                    use_lesk=False)
+
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
 
