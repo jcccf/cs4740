@@ -197,13 +197,15 @@ class Example:
       posf.append((i+1, poses[offset+i][1]))
     self.posf = posf
   
-  def pos_positions(self, filter_punctuation=True, window=None):
+  def pos_positions(self, filter_punctuation=True, window=None, sentence=True):
     posf = list(self.posf)
     if filter_punctuation:
       posf = [(a,b) for a,b in posf if b is not "."]
     if window:
       posf = [(a,b) for a,b in posf if abs(a) <= window]
     posf = [str(a)+","+b for a,b in posf]
+    if sentence is True:
+      posf = " ".join(posf)
     return posf
     
   def count_within_window(self, word, n=None):
