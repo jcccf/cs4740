@@ -77,6 +77,9 @@ class Example:
       pickle.dump(s, open('data/pos/%s' % filehash, 'w'))
       
   def lesk(self, dicty):
+    '''Return overlaps of each sense with senses of surrounding words (window size of 2)
+      Stopwords are ignored, and results are normalized to the maximum overlap observed
+      Note that the size of the sense vector returned is 1 less, because index 0 was reserved for an unknown sense'''
     if self.lesk_vector is None:
       filehash = self.hash()
       try:
@@ -109,9 +112,6 @@ class Example:
     return self.lesk_wordlist
 
   def __load_lesk_vector(self, dicty):
-    '''Return overlaps of each sense with senses of surrounding words (window size of 2)
-      Stopwords are ignored, and results are normalized to the maximum overlap observed
-      Note that the size of the sense vector returned is 1 less, because index 0 was reserved for an unknown sense'''
     # print example.word, example.pos, example.target
     # print example.senses
   
