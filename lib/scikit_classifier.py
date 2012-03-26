@@ -17,14 +17,17 @@ from NGramModel import NGramModel
 import scipy.sparse as sps # sps.csr_matrix, sps.hstack
 
 class scikit_classifier:
-    def __init__(self,pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0,training_file='data/wsd-data/train_split.data',test_file='data/wsd-data/valiation_split.data'):
-        self.vectorizers = dict()
-        self.pos_vectorizers = dict()
-        self.syn_vectorizers = dict()
-        self.classifiers = dict()
+    def __init__(self,pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0,use_lesk=False,use_lesk_words=False,training_file='data/wsd-data/train_split.data',test_file='data/wsd-data/valiation_split.data'):
+        self.vectorizers = {}
+        self.pos_vectorizers = {}
+        self.lesky_words_vectorizers = {}
+        self.syn_vectorizers = {}
+        self.classifiers = {}
         self.pos_window_size = pos_window_size
         self.ngram_size = ngram_size
         self.use_syntactic_features = use_syntactic_features
+        self.use_lesk = use_lesk
+        self.use_lesk_words = use_lesk_words
         self.window_size = window_size
         self.training_file = training_file
         self.test_file = test_file
@@ -36,7 +39,7 @@ class scikit_classifier:
         # Prepares the examples into training data, applying features etc.
         if verbose:
             print "Preparing %d examples"%len(egs),
-        data, labels, pos, ngram, nsenses, syntactic, lesky = {}, {}, {}, {}, {}, {}, {}
+        data, labels, pos, ngram, nsenses, syntactic, lesky, lesky_words = {}, {}, {}, {}, {}, {}, {}, {}
         if (self.use_syntactic_features and for_training):
                 word_list = Syntactic_features.prepare_file(self.training_file)
                 syn_train = Syntactic_features.parse_stanford_output(self.training_file, word_list)
@@ -58,12 +61,18 @@ class scikit_classifier:
             #text = eg.context_before + " " + eg.target + " " + eg.context_after
             pre_words = eg.context_before.lower().split()[-self.window_size:]
             post_words = eg.context_after.lower().split()[:self.window_size]
-            text = ' '.join(pre_words) + ' ' + eg.target + ' ' + ' '.join(post_words)
+            text = ' '.join(pre_words) + ' ' + eg.target + ' ' + ' '.join(post_words) # TODO worsens our F1!
             data[eg.word].append( text )
             label = [ idx for idx,val in enumerate(eg.senses) if val == 1 ]
             labels[eg.word].append( label )
             pos[eg.word].append(eg.pos_positions(window=self.pos_window_size))
-            lesky[eg.word].append(eg.lesk(dictionary))
+            
+            if self.use_lesk:
+              lesky[eg.word].append(eg.lesk(dictionary))
+              
+            if self.use_lesk_words:
+              lesky_words[eg.word].append(eg.lesk_words(dictionary))
+            
             if (self.use_syntactic_features and for_training):
                 syntactic[eg.word].append(syn_train[syn_index])
                 syn_index += 1
@@ -80,13 +89,13 @@ class scikit_classifier:
         # print pos
         # raise Exception()
         if for_training:
-            return (data, labels, pos, lesky, ngram, nsenses, syntactic)
+            return (data, labels, pos, lesky, lesky_words, ngram, nsenses, syntactic)
         else:
-            return (data, labels, pos, lesky)
+            return (data, labels, pos, lesky, lesky_words)
 
     def train(self,egs):
         # Trains a classifier for each word sense
-        data,labels,pos,lesky,ngram,nsenses,syntactic = self.prepare_examples(egs,verbose=True)
+        data,labels,pos,lesky,lesky_words,ngram,nsenses,syntactic = self.prepare_examples(egs,verbose=True)
         self.ngram = ngram
         self.nsenses = nsenses
         print "\nTraining on %d words"%len(data),
@@ -118,8 +127,9 @@ class scikit_classifier:
                 X = sps.hstack((X, X_ngram))
             
             # Add Lesky
-            X_lesk = MVectorizer.rectangularize(lesky[word])
-            X = sps.hstack((X, X_lesk))
+            if self.use_lesk:
+              X_lesk = MVectorizer.rectangularize(lesky[word])
+              X = sps.hstack((X, X_lesk))
             
             Y = labels[word]
             
@@ -139,7 +149,7 @@ class scikit_classifier:
             syn_index = 0
         for eg in egs:
             eg.word = eg.word.lower()
-            data,labels,pos,lesky = self.prepare_examples([eg], for_training=False)
+            data,labels,pos,lesky,lesky_words = self.prepare_examples([eg], for_training=False)
             X = self.vectorizers[eg.word].transform(data[eg.word])
             
             # Add Parts of Speech
@@ -163,8 +173,9 @@ class scikit_classifier:
                 X = sps.hstack((X, X_ngram))
                 
             # Add Lesky
-            X_lesk = MVectorizer.rectangularize(lesky[eg.word])
-            X = sps.hstack((X, X_lesk))
+            if self.use_lesk:
+              X_lesk = MVectorizer.rectangularize(lesky[eg.word])
+              X = sps.hstack((X, X_lesk))
             
             Y = self.classifiers[eg.word].predict(X)
             
@@ -179,7 +190,7 @@ if __name__ == '__main__':
     # classifier = weka_classifier(10,nltk.DecisionTreeClassifier)  # Does not work with sparse features
     # classifier = weka_classifier(10,nltk.ConditionalExponentialClassifier,split_pre_post=False)
     # classifier = weka_classifier(10,nltk.NaiveBayesClassifier,split_pre_post=True)
-    classifier = scikit_classifier(pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0)
+    classifier = scikit_classifier(pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0,use_lesk=False)
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
 

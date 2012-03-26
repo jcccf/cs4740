@@ -1,14 +1,23 @@
-import re, StringIO, nltk, cPickle as pickle, hashlib, string
+import re, StringIO, nltk, cPickle as pickle, hashlib, string, itertools
 from nltk.corpus import wordnet as wn
 from lxml import etree
 from lxml import html
 import os
 
+# Make cache directories if they don't exist
 try:
   os.makedirs('data/lesk/')
+except:
+  pass
+try:
+  os.makedirs('data/lesk_wordlist/')
+except:
+  pass
+try:
   os.makedirs('data/pos/')
 except:
   pass
+
 
 wordnet_tags = {'NN':wn.NOUN,'JJ':wn.ADJ,'VB':wn.VERB,'RB':wn.ADV}
 def penn_to_wn(penn_tag):
@@ -47,6 +56,7 @@ class Example:
     self.context_after = context_after
     self.ca_tokenized = None
     self.lesk_vector = None
+    self.lesk_wordlist = None
     self.cache()
   
   def hash(self):
@@ -76,6 +86,28 @@ class Example:
         pickle.dump(self.lesk_vector, open('data/lesk/%s' % filehash, 'w'))
     return self.lesk_vector
   
+  def lesk_words(self, dicty):
+    '''Return a list of all non-stopwords that appear in the definitions of words surrounding the target'''
+    if self.lesk_wordlist is None:
+      filehash = self.hash()
+      try:
+        self.lesk_wordlist = pickle.load(open('data/lesk_wordlist/%s' % filehash, 'r'))
+      except:
+        # Generate words in definitions of words surrounding target
+        other_words = []
+        words = self.words_window(2)
+        for word, pos in words:
+          print word, pos
+          baseword = wn.morphy(word)
+          if baseword is not None:
+            pos = penn_to_wn(pos)
+            synsets = wn.synsets(baseword, pos=pos) if pos is not None else wn.synsets(baseword)
+            for synset in synsets:
+              other_words.append(WordSet(synset.definition).words)
+        self.lesk_wordlist = list(itertools.chain.from_iterable(other_words))
+        pickle.dump(self.lesk_wordlist, open('data/lesk_wordlist/%s' % filehash, 'w'))
+    return self.lesk_wordlist
+
   def __load_lesk_vector(self, dicty):
     '''Return overlaps of each sense with senses of surrounding words (window size of 2)
       Stopwords are ignored, and results are normalized to the maximum overlap observed
@@ -85,7 +117,7 @@ class Example:
   
     # Generate WordSets of surrounding words
     other_sets = []
-    words = self.words_window(1)
+    words = self.words_window(100)
     for word, pos in words:
       print word, pos
       baseword = wn.morphy(word)
@@ -252,11 +284,13 @@ def load_training_data(filename):
 
 
 if __name__ == '__main__':
+
   egs = load_examples()
   dictionary = load_dictionary()
   
   for eg in egs:
-    print eg.lesk(dictionary)
+    # print eg.lesk(dictionary)
+    print eg.lesk_words(dictionary)
 
   # print egs[0].word
   # print egs[0].pos
