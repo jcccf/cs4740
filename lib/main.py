@@ -52,9 +52,16 @@ elif task == 3 or task == 4:
         f.close()
     print("done")
 elif task == 5:
-    name = "scikit_test_pos1_ngram0"
+    name = "scikit_test_ws500_pos1_ngram0_synfeat0_uselesk_useleskwords"
     classifier = scikit_classifier.scikit_classifier(
-        pos_window_size=1,ngram_size=0)
+        window_size=500,
+        use_syntactic_features=0,
+        pos_window_size=1,
+        ngram_size=0,
+        use_lesk=True,
+        use_lesk_words=True,
+        training_file='data/wsd-data/train.data',
+        test_file='data/wsd-data/test.data')
     egs = Parser.load_examples('data/wsd-data/train.data')
     test_egs = Parser.load_examples('data/wsd-data/test.data')
     
