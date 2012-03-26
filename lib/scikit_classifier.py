@@ -116,17 +116,11 @@ class scikit_classifier:
             for sense_id,classifier in enumerate(classifiers.estimators_):
                 coeff = classifier.coef_.tolist()[0]
                 
-                # print "coeff:"
-                # print coeff
-                feature_value = max([abs(x) for x in (coeff[:total_len]) ])
-                # print "feature value:"
-                # print feature_value
-                try:
-                    maxid = coeff.index(feature_value)
-                except:
-                    maxid = coeff.index(-feature_value)
-                # print "maxid value:"
-                # print maxid
+                # Find the feature with the highest (abs) weight
+                coeff = [abs(x) for x in (coeff[:total_len]) ]
+                feature_value = max(coeff)
+                maxid = coeff.index(feature_value)
+                
                 if maxid < context_len:
                     # Find the feature key
                     feature_key = context_vectorizer.inverse_transform(
