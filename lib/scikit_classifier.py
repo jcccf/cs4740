@@ -179,9 +179,17 @@ class scikit_classifier:
          
             # Add Syntactic dependencies
             if (self.use_syntactic_features):
-                self.syn_vectorizers[word] = MVectorizer.ListsVectorizer()
-                X_syn = self.syn_vectorizers[word].fit_transform(syntactic[word])
-                X = sps.hstack((X, X_syn))
+                if all(synfeat == [] for synfeat in syntactic[word]):
+                    pass
+                else:
+                    self.syn_vectorizers[word] = MVectorizer.ListsVectorizer()
+                    X_syn = self.syn_vectorizers[word].fit_transform(syntactic[word])
+                    (x_rows,x_cols) = X.shape
+                    (xsyn_rows,xsyn_cols) = X_syn.shape
+                    if x_rows != xsyn_rows:
+                        X_filler = sps.coo_matrix((x_rows-xsyn_rows,xsyn_cols))
+                        X_syn = sps.vstack((X_syn,X_filler))
+                    X = sps.hstack((X, X_syn))
             
             # Add NGram model
             if self.ngram_size > 0:
@@ -231,8 +239,18 @@ class scikit_classifier:
             
             # Add Syntactic dependencies
             if (self.use_syntactic_features):
-                X_syn = self.syn_vectorizers[eg.word].transform([syntactic[syn_index]])
-                X = sps.hstack((X, X_syn))
+                if all(synfeat == [] for synfeat in syntactic[syn_index]):
+                    pass
+                elif (not (eg.word in self.syn_vectorizers)):
+                    pass
+                else:
+                    X_syn = self.syn_vectorizers[eg.word].transform([syntactic[syn_index]])
+                    (x_rows,x_cols) = X.shape
+                    (xsyn_rows,xsyn_cols) = X_syn.shape
+                    if x_rows != xsyn_rows:
+                        X_filler = sps.coo_matrix((x_rows-xsyn_rows,xsyn_cols))
+                        X_syn = sps.vstack((X_syn,X_filler))
+                    X = sps.hstack((X, X_syn))
                 syn_index += 1
             
             # Add NGram model

@@ -37,25 +37,27 @@ def parse_stanford_output(filename, word_list):
                 match_obj = line_matcher.match(l)
                 if match_obj:
                     relation, word1, word2 = match_obj.groups()
-                    #if word_list_index == 277:
-                        #print(l)
-                        #print(word_list[word_list_index]+' '+word1+' '+word2)
-                    if word_list[word_list_index] == word1:
-                        synfeatures[word_list_index].append(relation)
-                        synfeatures[word_list_index].append(word2) 
-                    elif word_list[word_list_index] == word2:
-                        synfeatures[word_list_index].append(relation)
-                        synfeatures[word_list_index].append(word1) 
+                    if relation in ['prep_with','amod','prep_at','prep_of','det']:
+                        #possibly use dobj
+                        if word_list[word_list_index] == word1:
+                            #synfeatures[word_list_index].append(relation)
+                            synfeatures[word_list_index].append(word2) 
+                        elif word_list[word_list_index] == word2:
+                            #synfeatures[word_list_index].append(relation)
+                            synfeatures[word_list_index].append(word1) 
                 else:
                     pass
     return synfeatures
 
 if __name__ == '__main__':
-    #filename = 'data/wsd-data/train_split.data';
-    filename = 'data/wsd-data/valiation_split.data';
+    filename = 'data/wsd-data/train_split.data';
+    #filename = 'data/wsd-data/valiation_split.data';
+    #filename = 'data/wsd-data/train.data';
+    #filename = 'data/wsd-data/test.data';
     word_list = prepare_file(filename);
     #use the stanford parser to parse the output file
     raw_input("Parse the file with Stanford parser and press any key to continue")
     synfeatures = parse_stanford_output(filename, word_list);
+    print synfeatures
                
       
