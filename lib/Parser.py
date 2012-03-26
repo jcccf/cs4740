@@ -203,6 +203,7 @@ class Example:
       posf = [(a,b) for a,b in posf if b is not "."]
     if window:
       posf = [(a,b) for a,b in posf if abs(a) <= window]
+    posf = [str(a)+","+b for a,b in posf]
     return posf
     
   def count_within_window(self, word, n=None):
