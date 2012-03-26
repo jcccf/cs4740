@@ -73,7 +73,7 @@ class scikit_classifier:
               lesky[eg.word].append(eg.lesk(dictionary))
               
             if self.use_lesk_words:
-              lesky_words[eg.word].append(eg.lesk_words(dictionary))
+              lesky_words[eg.word].append(' '.join(eg.lesk_words(dictionary)))
             
             if (self.use_syntactic_features and for_training):
                 syntactic[eg.word].append(syn_train[syn_index])
