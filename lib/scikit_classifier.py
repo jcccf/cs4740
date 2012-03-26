@@ -56,6 +56,7 @@ class scikit_classifier:
                 labels[eg.word] = []
                 pos[eg.word] = []
                 lesky[eg.word] = []
+                lesky_words[eg.word] = []
                 if (self.use_syntactic_features and for_training):
                     syntactic[eg.word] = []
             # text = eg.context_before + " " + eg.target + " " + eg.pos + " " + eg.context_after
