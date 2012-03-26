@@ -1,5 +1,6 @@
 from scipy.sparse import csr_matrix
 import numpy as np
+import scipy.sparse as sp
 from sklearn.preprocessing import Normalizer
 from collections import Counter
 
@@ -32,7 +33,8 @@ class DictsVectorizer(object):
           col.append(counter)
           counter += 1
     self.k_to_i = k_to_i
-    self.matrix = csr_matrix((data,(row,col))) 
+    shape = (len(list_of_dicts), max(counter,1))
+    self.matrix = csr_matrix((data,(row,col)), shape=shape) 
     return self.matrix
   
   def dicts_to_csr_transform(self, list_of_dicts):
@@ -54,6 +56,35 @@ class DictsVectorizer(object):
     if self.matrix is None:
       raise Exception("Nothing fitted yet!")
     return self.dicts_to_csr_transform(dicts)
+    
+  def inverse_transform(self, X):
+    """Return terms per document with nonzero entries in X.
+
+    Parameters
+    ----------
+    X : {array, sparse matrix}, shape = [n_samples, n_features]
+
+    Returns
+    -------
+    X_inv : list of arrays, len = n_samples
+        List of arrays of terms.
+    """
+    if sp.isspmatrix_coo(X):  # COO matrix is not indexable
+        X = X.tocsr()
+    elif not sp.issparse(X):
+        # We need to convert X to a matrix, so that the indexing
+        # returns 2D objects
+        X = np.asmatrix(X)
+    n_samples = X.shape[0]
+
+    terms = np.array(self.k_to_i.keys())
+    indices = np.array(self.k_to_i.values())
+    inverse_vocabulary = terms[np.argsort(indices)]
+
+    return [inverse_vocabulary[X[i, :].nonzero()[1]].ravel()
+            for i in xrange(n_samples)]
+
+
 
 def rectangularize(list_of_vectors):
   return np.array(list_of_vectors)
@@ -101,7 +132,9 @@ if __name__ == '__main__':
   c = {"night": 6}
   d = {"hello": 7, "goodbye": 8}
   vec = DictsVectorizer()
-  print vec.fit_transform([a,b,c,d]).todense()
+  X = vec.fit_transform([a,b,c,d,dict()]).todense()
+  print X
+  print vec.inverse_transform(X)
   
   import scipy.sparse as sps
   mat = vec.fit_transform([a,b,c,d])

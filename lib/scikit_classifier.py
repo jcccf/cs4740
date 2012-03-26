@@ -1,5 +1,6 @@
 import Parser, sys, os, string, MVectorizer, Syntactic_features
 from optparse import OptionParser
+from scipy.sparse import csr_matrix
 
 from sklearn.feature_extraction.text import Vectorizer
 from sklearn.preprocessing import LabelBinarizer
@@ -94,6 +95,63 @@ class scikit_classifier:
             return (data, labels, pos, lesky, lesky_words, ngram, nsenses, syntactic)
         else:
             return (data, labels, pos, lesky, lesky_words)
+    
+    def most_informative_features(self):
+        # Returns list of (word, sense_idx, feature_key, feature_value)
+        lst = []
+        for word,classifiers in self.classifiers.iteritems():
+            context_vectorizer = self.vectorizers[word]
+            context_len = context_vectorizer.transform([""]).shape[1]
+            
+            pos_vectorizer = self.pos_vectorizers[word]
+            pos_len = pos_vectorizer.transform([""]).shape[1]
+            
+            # if (self.use_syntactic_features):
+                # syn_vectorizer = self.syn_vectorizers[word]
+                # syn_len = syn_vectorizer.transform([""]).shape[1]
+            
+            # total_len = context_len + pos_len
+            total_len = context_len
+            
+            for sense_id,classifier in enumerate(classifiers.estimators_):
+                coeff = classifier.coef_.tolist()[0]
+                
+                # print "coeff:"
+                # print coeff
+                feature_value = max([abs(x) for x in (coeff[:total_len]) ])
+                # print "feature value:"
+                # print feature_value
+                try:
+                    maxid = coeff.index(feature_value)
+                except:
+                    maxid = coeff.index(-feature_value)
+                # print "maxid value:"
+                # print maxid
+                if maxid < context_len:
+                    # Find the feature key
+                    feature_key = context_vectorizer.inverse_transform(
+                        csr_matrix( ([1], ([0], [maxid])), shape=(1,context_len) ))[0][0]
+                    lst.append( (word,sense_id,feature_key,feature_value) )
+                    # print lst
+                    # return None
+                    continue
+                else:
+                    maxid -= context_len
+                
+                if maxid < pos_len:
+                    # Find the feature key
+                    feature_key = pos_vectorizer.inverse_transform(
+                        csr_matrix( ([1], ([0], [maxid])), shape=(1,pos_len) ))[0][0]
+                    lst.append( (word,sense_id,"POS::"+feature_key,feature_value) )
+                    # print lst
+                    # return None
+                    continue
+                else:
+                    maxid -= pos_len
+                
+                # If it gets here, it isn't a feature that I know of..
+                lst.append( (word,sense_id,maxid,feature_value) )
+        return lst
 
     def train(self,egs):
         # Trains a classifier for each word sense
@@ -104,7 +162,8 @@ class scikit_classifier:
         for word in labels.iterkeys():
             sys.stdout.write(".")
             sys.stdout.flush()
-            # Extract features
+            
+            # Extract context features
             self.vectorizers[word] = Vectorizer()
             X = self.vectorizers[word].fit_transform(data[word])
             
@@ -112,6 +171,17 @@ class scikit_classifier:
             self.pos_vectorizers[word] = MVectorizer.ListsVectorizer()
             X_pos = self.pos_vectorizers[word].fit_transform(pos[word])
             X = sps.hstack((X, X_pos))
+              
+            # Add Lesky Words
+            if self.use_lesk_words:
+              self.lesky_words_vectorizers[word] = Vectorizer()
+              X_leskwords = self.lesky_words_vectorizers[word].fit_transform(lesky_words[word])
+              X = sps.hstack((X, X_leskwords))
+            
+            # Add Lesky
+            if self.use_lesk:
+              X_lesk = MVectorizer.rectangularize(lesky[word])
+              X = sps.hstack((X, X_lesk))
          
             # Add Syntactic dependencies
             if (self.use_syntactic_features):
@@ -127,18 +197,7 @@ class scikit_classifier:
                     ngram_list.append( dict([ ( idx, self.ngram[word+str(idx)].get_perplexity(sentence,True) ) for idx in range(0,num_senses) ]) )
                 X_ngram = MVectorizer.DictsVectorizer().fit_transform(ngram_list)
                 X = sps.hstack((X, X_ngram))
-            
-            # Add Lesky
-            if self.use_lesk:
-              X_lesk = MVectorizer.rectangularize(lesky[word])
-              X = sps.hstack((X, X_lesk))
-              
-            # Add Lesky Words
-            if self.use_lesk_words:
-              self.lesky_words_vectorizers[word] = Vectorizer()
-              X_leskwords = self.lesky_words_vectorizers[word].fit_transform(lesky_words[word])
-              X = sps.hstack((X, X_leskwords))
-            
+                
             Y = labels[word]
             
             # Learn classifier
@@ -158,11 +217,23 @@ class scikit_classifier:
         for eg in egs:
             eg.word = eg.word.lower()
             data,labels,pos,lesky,lesky_words = self.prepare_examples([eg], for_training=False)
+            
+            # Add context words
             X = self.vectorizers[eg.word].transform(data[eg.word])
             
             # Add Parts of Speech
             X_pos = self.pos_vectorizers[eg.word].transform(pos[eg.word])
             X = sps.hstack((X, X_pos))
+              
+            # Add Lesky Words
+            if self.use_lesk_words:
+              X_leskywords = self.lesky_words_vectorizers[eg.word].transform(lesky_words[eg.word])
+              X = sps.hstack((X, X_leskywords))
+                
+            # Add Lesky
+            if self.use_lesk:
+              X_lesk = MVectorizer.rectangularize(lesky[eg.word])
+              X = sps.hstack((X, X_lesk))
             
             # Add Syntactic dependencies
             if (self.use_syntactic_features):
@@ -179,16 +250,6 @@ class scikit_classifier:
                     ngram_list.append( dict([ ( idx, self.ngram[eg.word+str(idx)].get_perplexity(sentence,True) ) for idx in range(0,num_senses) ]) )
                 X_ngram = MVectorizer.DictsVectorizer().fit_transform(ngram_list)
                 X = sps.hstack((X, X_ngram))
-                
-            # Add Lesky
-            if self.use_lesk:
-              X_lesk = MVectorizer.rectangularize(lesky[eg.word])
-              X = sps.hstack((X, X_lesk))
-              
-            # Add Lesky Words
-            if self.use_lesk_words:
-              X_leskywords = self.lesky_words_vectorizers[eg.word].transform(lesky_words[eg.word])
-              X = sps.hstack((X, X_leskywords))
             
             Y = self.classifiers[eg.word].predict(X)
             
@@ -206,11 +267,12 @@ if __name__ == '__main__':
     optParser.add_option("--ngram", help="Ngram size",
                   action="store", type="int", dest="ngram_size", default=0)
     optParser.add_option("--ws", help="Context window size",
-                  action="store", type="int", dest="window_size", default=3)
+                  action="store", type="int", dest="window_size", default=500)
     optParser.add_option("--use_syntactic_features", help="Use syntactic features?",
                   action="store", type="int", dest="use_syntactic_features", default=0)
     optParser.add_option("--use_lesk", action="store_true", dest="use_lesk", default=False)
     optParser.add_option("--use_lesk_words", action="store_true", dest="use_lesk_words", default=False)
+    optParser.add_option("--most_informative_features", action="store_true", dest="most_informative_features", default=False)
 
     (options,args) = optParser.parse_args()
     print options
@@ -229,44 +291,41 @@ if __name__ == '__main__':
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')
 
-    if True:
-        classifier.train(egs)
-#       prediction = classifier.predict( egs[0:3] )
-#       print(prediction)
-        # print "True labels vs predicted labels"
-        tp = 0.0
-        fp = 0.0
-        tn = 0.0
-        fn = 0.0
-        for eg in test_egs:
-            # print eg.word+" ",
-            # print eg.senses,
-            # print " vs ",
-            # print classifier.predict([eg])
-            pred = classifier.predict([eg])
-            # print pred
-            for (k,(s,p)) in enumerate(zip(eg.senses,pred)):
-                """ Word \t POS \t Sense # \t True label \t Predicted label """
-                #print "%s\t%s\t%d\t%d\t%d"%(eg.word,eg.pos,k,s,p)
-                if s == 1 and p == 1:
-                    tp += 1
-                elif s == 0 and p == 0:
-                    tn += 1
-                elif s == 1 and p == 0:
-                    fn += 1
-                elif s == 0 and p == 1:
-                    fp += 1
-        prec = tp/(tp+fp) if tp+fp > 0 else 0
-        rec  = tp/(tp+fn) if tp+fn > 0 else 0
-        f1   = 2.0*(prec*rec)/(prec+rec) if (prec+rec) > 0 else 0
-        print "%d, %d, %d, %d\n%f, %f, %f"%(tp,tn,fp,fn,prec,rec,f1)
+    classifier.train(egs)
     
-    if False:
-        classifier.prepare_examples(egs,use_str=True)
-        try:
-            os.makedirs('data/weka/')
-        except:
-            pass
-        classifier.write_arff("data/weka/")
+    if options.most_informative_features:
+        print "Most informative features (Word, sense_id, context_word, svm_weight):"
+        for (word,sense_id,feature_key,feature_value) in classifier.most_informative_features():
+            print word,sense_id,feature_key,feature_value
 
+    # prediction = classifier.predict( egs[0:3] )
+    # print(prediction)
+    # print "True labels vs predicted labels"
+    tp = 0.0
+    fp = 0.0
+    tn = 0.0
+    fn = 0.0
+    for eg in test_egs:
+        # print eg.word+" ",
+        # print eg.senses,
+        # print " vs ",
+        # print classifier.predict([eg])
+        pred = classifier.predict([eg])
+        # print pred
+        for (k,(s,p)) in enumerate(zip(eg.senses,pred)):
+            """ Word \t POS \t Sense # \t True label \t Predicted label """
+            #print "%s\t%s\t%d\t%d\t%d"%(eg.word,eg.pos,k,s,p)
+            if s == 1 and p == 1:
+                tp += 1
+            elif s == 0 and p == 0:
+                tn += 1
+            elif s == 1 and p == 0:
+                fn += 1
+            elif s == 0 and p == 1:
+                fp += 1
+    prec = tp/(tp+fp) if tp+fp > 0 else 0
+    rec  = tp/(tp+fn) if tp+fn > 0 else 0
+    f1   = 2.0*(prec*rec)/(prec+rec) if (prec+rec) > 0 else 0
+    print "%d, %d, %d, %d\n%f, %f, %f"%(tp,tn,fp,fn,prec,rec,f1)
+    
     
