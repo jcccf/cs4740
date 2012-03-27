@@ -35,7 +35,6 @@ class scikit_classifier:
         self.window_size = window_size
         self.training_file = training_file
         self.test_file = test_file
-        pass
         
     def prepare_examples(self, egs, for_training=True, verbose=False):
         dictionary = Parser.load_dictionary()
@@ -290,9 +289,9 @@ if __name__ == '__main__':
     optParser.add_option("--use_lesk", action="store_true", dest="use_lesk", default=False)
     optParser.add_option("--lesk_ws", help="Lesk window size",
                   action="store", type="int", dest="lesk_window_size", default=100)
-    optParser.add_option("--use_lesk_words", action="store_true", dest="use_lesk_words", default=True)
+    optParser.add_option("--use_lesk_words", action="store_true", dest="use_lesk_words", default=False)
     optParser.add_option("--lw_ws", help="Lesk words window size",
-                  action="store", type="int", dest="lesk_words_window_size", default=1)
+                  action="store", type="int", dest="lesk_words_window_size", default=3)
     optParser.add_option("--most_informative_features", action="store_true", dest="most_informative_features", default=False)
     optParser.add_option("--output", help="Output predicted senses to file",
                   action="store", type="string", dest="outfile", default="")

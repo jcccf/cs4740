@@ -102,7 +102,7 @@ class Example:
         other_words = []
         words = self.words_window(window_size)
         for word, pos in words:
-          print word, pos
+          # print word, pos
           baseword = wn.morphy(word)
           if baseword is not None:
             pos = penn_to_wn(pos)
@@ -121,7 +121,7 @@ class Example:
     other_sets = []
     words = self.words_window(window_size)
     for word, pos in words:
-      print word, pos
+      # print word, pos
       baseword = wn.morphy(word)
       if baseword is not None:
         pos = penn_to_wn(pos)
