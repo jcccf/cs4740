@@ -19,7 +19,7 @@ from NGramModel import NGramModel
 import scipy.sparse as sps # sps.csr_matrix, sps.hstack
 
 class scikit_classifier:
-    def __init__(self,pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0,use_lesk=False,use_lesk_words=False,training_file='data/wsd-data/train_split.data',test_file='data/wsd-data/valiation_split.data'):
+    def __init__(self,pos_window_size=1,ngram_size=0,window_size=3,use_syntactic_features=0,use_lesk=False,lesk_window_size=100,use_lesk_words=False,lesk_words_window_size=2,training_file='data/wsd-data/train_split.data',test_file='data/wsd-data/valiation_split.data'):
         self.vectorizers = {}
         self.pos_vectorizers = {}
         self.lesky_words_vectorizers = {}
@@ -29,7 +29,9 @@ class scikit_classifier:
         self.ngram_size = ngram_size
         self.use_syntactic_features = use_syntactic_features
         self.use_lesk = use_lesk
+        self.lesk_window_size = lesk_window_size
         self.use_lesk_words = use_lesk_words
+        self.lesk_words_window_size = lesk_words_window_size
         self.window_size = window_size
         self.training_file = training_file
         self.test_file = test_file
@@ -71,10 +73,10 @@ class scikit_classifier:
             pos[eg.word].append(eg.pos_positions(window=self.pos_window_size))
             
             if self.use_lesk:
-              lesky[eg.word].append(eg.lesk(dictionary))
+              lesky[eg.word].append(eg.lesk(dictionary, window_size=self.lesk_window_size))
               
             if self.use_lesk_words:
-              lesky_words[eg.word].append(' '.join(eg.lesk_words(dictionary)))
+              lesky_words[eg.word].append(' '.join(eg.lesk_words(dictionary, window_size=self.lesk_words_window_size)))
             
             if (self.use_syntactic_features and for_training):
                 syntactic[eg.word].append(syn_train[syn_index])
@@ -286,7 +288,11 @@ if __name__ == '__main__':
     optParser.add_option("--use_syntactic_features", help="Use syntactic features?",
                   action="store", type="int", dest="use_syntactic_features", default=0)
     optParser.add_option("--use_lesk", action="store_true", dest="use_lesk", default=False)
-    optParser.add_option("--use_lesk_words", action="store_true", dest="use_lesk_words", default=False)
+    optParser.add_option("--lesk_ws", help="Lesk window size",
+                  action="store", type="int", dest="lesk_window_size", default=100)
+    optParser.add_option("--use_lesk_words", action="store_true", dest="use_lesk_words", default=True)
+    optParser.add_option("--lw_ws", help="Lesk words window size",
+                  action="store", type="int", dest="lesk_words_window_size", default=1)
     optParser.add_option("--most_informative_features", action="store_true", dest="most_informative_features", default=False)
 
     (options,args) = optParser.parse_args()
@@ -301,7 +307,9 @@ if __name__ == '__main__':
                     window_size = options.window_size,
                     use_syntactic_features = options.use_syntactic_features,
                     use_lesk = options.use_lesk,
-                    use_lesk_words = options.use_lesk_words)
+                    lesk_window_size = options.lesk_window_size,
+                    use_lesk_words = options.use_lesk_words,
+                    lesk_words_window_size = options.lesk_words_window_size)
 
     egs = Parser.load_examples('data/wsd-data/train_split.data')
     test_egs = Parser.load_examples('data/wsd-data/valiation_split.data')

@@ -76,29 +76,31 @@ class Example:
       s = {'cb_tokenized': self.cb_tokenized, 'ca_tokenized': self.ca_tokenized, 'posf': self.posf}
       pickle.dump(s, open('data/pos/%s' % filehash, 'w'))
       
-  def lesk(self, dicty):
+  def lesk(self, dicty, window_size=100):
     '''Return overlaps of each sense with senses of surrounding words (window size of 2)
       Stopwords are ignored, and results are normalized to the maximum overlap observed
       Note that the size of the sense vector returned is 1 less, because index 0 was reserved for an unknown sense'''
     if self.lesk_vector is None:
       filehash = self.hash()
       try:
-        self.lesk_vector = pickle.load(open('data/lesk/%s' % filehash, 'r'))
+        self.lesk_vector = pickle.load(open('data/lesk/%d_%s' % (window_size, filehash), 'r'))
       except:
-        self.lesk_vector = self.__load_lesk_vector(dicty)
-        pickle.dump(self.lesk_vector, open('data/lesk/%s' % filehash, 'w'))
+        print "Caching Lesk for window size %d" % window_size
+        self.lesk_vector = self.__load_lesk_vector(dicty, window_size=window_size)
+        pickle.dump(self.lesk_vector, open('data/lesk/%d_%s' % (window_size, filehash), 'w'))
     return self.lesk_vector
   
-  def lesk_words(self, dicty):
+  def lesk_words(self, dicty, window_size=2):
     '''Return a list of all non-stopwords that appear in the definitions of words surrounding the target'''
     if self.lesk_wordlist is None:
       filehash = self.hash()
       try:
-        self.lesk_wordlist = pickle.load(open('data/lesk_wordlist/%s' % filehash, 'r'))
+        self.lesk_wordlist = pickle.load(open('data/lesk_wordlist/%d_%s' % (window_size, filehash), 'r'))
       except:
+        print "Caching Lesk words for window size %d" % window_size
         # Generate words in definitions of words surrounding target
         other_words = []
-        words = self.words_window(2)
+        words = self.words_window(window_size)
         for word, pos in words:
           print word, pos
           baseword = wn.morphy(word)
@@ -108,16 +110,16 @@ class Example:
             for synset in synsets:
               other_words.append(WordSet(synset.definition).words)
         self.lesk_wordlist = list(itertools.chain.from_iterable(other_words))
-        pickle.dump(self.lesk_wordlist, open('data/lesk_wordlist/%s' % filehash, 'w'))
+        pickle.dump(self.lesk_wordlist, open('data/lesk_wordlist/%d_%s' % (window_size, filehash), 'w'))
     return self.lesk_wordlist
 
-  def __load_lesk_vector(self, dicty):
+  def __load_lesk_vector(self, dicty, window_size=window_size):
     # print example.word, example.pos, example.target
     # print example.senses
   
     # Generate WordSets of surrounding words
     other_sets = []
-    words = self.words_window(100)
+    words = self.words_window(window_size)
     for word, pos in words:
       print word, pos
       baseword = wn.morphy(word)
