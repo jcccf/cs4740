@@ -1,4 +1,4 @@
-import Parser, sys, os, string, MVectorizer, Syntactic_features
+import Parser, sys, os, string, MVectorizer, Syntactic_features, Baselinemostfrequentsense
 from optparse import OptionParser
 from scipy.sparse import csr_matrix
 
@@ -295,6 +295,8 @@ if __name__ == '__main__':
     optParser.add_option("--most_informative_features", action="store_true", dest="most_informative_features", default=False)
     optParser.add_option("--output", help="Output predicted senses to file",
                   action="store", type="string", dest="outfile", default="")
+    optParser.add_option("--merge_with_most_frequent_sense", help="Incorporate most freqent sense?",
+                  action="store_true", dest="merge_with_most_frequent_sense", default=False)
 
     (options,args) = optParser.parse_args()
     print options
@@ -323,6 +325,11 @@ if __name__ == '__main__':
             print word,sense_id,context_key,context_val,pos_key,pos_val
         sys.stdout.flush()
         exit(0)
+        
+    baseline_classifier = None
+    if options.merge_with_most_frequent_sense:
+        baseline_classifier = Baselinemostfrequentsense.Baselinemostfrequentsense()
+        baseline_classifier.create_sensecounts(egs)
 
     # prediction = classifier.predict( egs[0:3] )
     # print(prediction)
@@ -339,7 +346,9 @@ if __name__ == '__main__':
         # print " vs ",
         # print classifier.predict([eg])
         pred = classifier.predict([eg])
-        # print pred
+        if baseline_classifier is not None and pred == [0]*len(pred):   # Prediction is empty
+            pred = baseline_classifier.predict_sense(eg)
+        
         for (k,(s,p)) in enumerate(zip(eg.senses,pred)):
             """ Word \t POS \t Sense # \t True label \t Predicted label """
             if outf is not None:
