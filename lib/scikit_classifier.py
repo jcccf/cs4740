@@ -293,6 +293,8 @@ if __name__ == '__main__':
     optParser.add_option("--lw_ws", help="Lesk words window size",
                   action="store", type="int", dest="lesk_words_window_size", default=3)
     optParser.add_option("--most_informative_features", action="store_true", dest="most_informative_features", default=False)
+    optParser.add_option("--output", help="Output predicted senses to file",
+                  action="store", type="string", dest="outfile", default="")
 
     (options,args) = optParser.parse_args()
     print options
@@ -325,6 +327,8 @@ if __name__ == '__main__':
     # prediction = classifier.predict( egs[0:3] )
     # print(prediction)
     # print "True labels vs predicted labels"
+    outf = None if options.outfile == "" else open(options.outfile,"w")
+    
     tp = 0.0
     fp = 0.0
     tn = 0.0
@@ -338,6 +342,8 @@ if __name__ == '__main__':
         # print pred
         for (k,(s,p)) in enumerate(zip(eg.senses,pred)):
             """ Word \t POS \t Sense # \t True label \t Predicted label """
+            if outf is not None:
+                outf.write("%s\t%s\t%d\t%d\t%d\n"%(eg.word,eg.pos,k,s,p) )
             #print "%s\t%s\t%d\t%d\t%d"%(eg.word,eg.pos,k,s,p)
             if s == 1 and p == 1:
                 tp += 1
@@ -352,4 +358,7 @@ if __name__ == '__main__':
     f1   = 2.0*(prec*rec)/(prec+rec) if (prec+rec) > 0 else 0
     print "%d, %d, %d, %d\n%f, %f, %f"%(tp,tn,fp,fn,prec,rec,f1)
     
+    if outf is not None:
+        outf.close()
+        outf = None
     
