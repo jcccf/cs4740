@@ -113,7 +113,7 @@ class Example:
         pickle.dump(self.lesk_wordlist, open('data/lesk_wordlist/%d_%s' % (window_size, filehash), 'w'))
     return self.lesk_wordlist
 
-  def __load_lesk_vector(self, dicty, window_size=window_size):
+  def __load_lesk_vector(self, dicty, window_size=100):
     # print example.word, example.pos, example.target
     # print example.senses
   
