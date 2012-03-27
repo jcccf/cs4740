@@ -167,7 +167,7 @@ class scikit_classifier:
             X = self.vectorizers[word].fit_transform(data[word])
             
             # Add Parts of Speech
-            self.pos_vectorizers[word] = MVectorizer.ListsVectorizer()
+            self.pos_vectorizers[word] = Vectorizer()
             X_pos = self.pos_vectorizers[word].fit_transform(pos[word])
             X = sps.hstack((X, X_pos))
               
