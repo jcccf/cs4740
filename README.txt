@@ -16,3 +16,4 @@ Use
 Notes
 - Baselinemostfrequentsense.py computes our baseline (predicting the most frequent word sense).
 - the sample input to/output from stanford parser.txt files contain examples of the contents of files described in 3.
+- lib/console_output.txt is an example of text printed to the console when the classifier is run. Since the parsers for the POS, co-occurence, Lesk, N-gram features directly pass the data to the classifier, they do not generate any output files.
