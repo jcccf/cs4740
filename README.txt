@@ -15,3 +15,4 @@ Use
 
 Notes
 - Baselinemostfrequentsense.py computes our baseline (predicting the most frequent word sense).
+- the sample input to/output from stanford parser.txt files contain examples of the contents of files described in 3.
