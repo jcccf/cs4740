@@ -5,7 +5,7 @@ import nltk.classify
 import scikit_classifier
 
 print "==CS 4740 Project 2=="
-task = int(input("select method: (baseline most frequent sense=1, classifier=2, naive_bayes=3, max_ent=4, scikit=5) "))
+task = int(input("select method: (baseline most frequent sense=1, naive_bayes=3, max_ent=4, scikit=5) "))
 
 try:
     os.makedirs('data/output/')
@@ -23,9 +23,7 @@ if task == 1:
             for element in prediction:
                 f.write('%d\n' % element)
         f.close()
-    print("done")
-elif task == 2:
-    Disambiguation.disambiguate()    
+    print("done")  
 elif task == 3 or task == 4:
     if task == 3:
         classifier = weka_classifier.weka_classifier(
