@@ -1,6 +1,9 @@
 # from scipy.sparse import csr_matrix
 import math,random,argparse
 from pprint import pprint
+from cProfile import run
+
+# CNT = 0
 
 class HMM():
     def __init__(self, ngram=2, smooth="lap"):
@@ -52,6 +55,8 @@ class HMM():
         
     @staticmethod
     def get_log_probability(prob,curr,word):
+        # global CNT
+        # CNT += 1
         if curr not in prob:
             return prob[-1]
         d = prob[curr]
@@ -91,9 +96,7 @@ class HMM():
             V[curr_state] = ( HMM.get_log_probability(self.tp,prev_state,pos) 
                             + HMM.get_log_probability(self.ep,curr_state,word) )
             path[pos] = ("<s>",pos)
-        # print V
         for word in observations[2:]:
-            # print word
             Vnew = dict()
             Pnew = dict()
             for pos in self.pos:
@@ -140,9 +143,12 @@ if __name__ == "__main__":
                        help='ngram for HMM')
     parser.add_argument('-k', metavar='kfold', type=int, dest='kfold', default=5, 
                        help='# folds for cross validation')
+    parser.add_argument('-s', metavar='random_seed', type=int, dest='random_seed', default=1023, 
+                       help='seed for random number generator')
 
     args = parser.parse_args()
     kfold = args.kfold
+    random.seed(args.random_seed)
     # data = [ zip("<s> I LIKE TO EAT ICE CREAM".split(),
                  # "<s> i like to eat ice cream".split()),
              # zip("<s> DOGS LIKE TO EAT ICE CREAM".split(),
@@ -153,40 +159,42 @@ if __name__ == "__main__":
     data = parse_training_file()
     datalen = float(len(data))
     # k-fold cross validation
-    total = 0.0
-    correct = 0.0
-    print "Shuffling data...",
-    random.shuffle(data)
-    print "Done."
-    for i in range(kfold):
-        print "Fold %d: Spliting data..."%(i+1),
-        lb = int(math.ceil(i*datalen/kfold))
-        ub = len(data) if i==5 else int(math.ceil((i+1)*datalen/kfold))
-        training_data = data[0:lb] + data[ub:]
-        test_data = data[lb:ub]
-        # print lb,ub
-        # continue
-        print "Training...",
-        hmm = HMM(ngram=args.ngram)
-        hmm.train(training_data)
-        print "Testing...",
-        for eg in test_data:
-            eg_pos = [ pos for pos,word in eg ]
-            teststr = [ word for pos,word in eg ]
-            seq,prob = hmm.decode(teststr)
-            correct += sum([1.0 for a,b in zip(seq,eg_pos) if a==b])
-            total += len(eg_pos)
-        print "Done"
-    print "Correct:",correct
-    print "Total:",total
-    print "Accuracy:",correct/total
-    # eg = random.choice(data)
-    # eg_pos = [ pos for pos,word in eg ]
-    # teststr = [ word for pos,word in eg ]
+    # total = 0.0
+    # correct = 0.0
+    # print "Shuffling data...",
+    # random.shuffle(data)
+    # print "Done."
+    # for i in range(kfold):
+        # print "Fold %d: Spliting data..."%(i+1),
+        # lb = int(math.ceil(i*datalen/kfold))
+        # ub = len(data) if i==5 else int(math.ceil((i+1)*datalen/kfold))
+        # training_data = data[0:lb] + data[ub:]
+        # test_data = data[lb:ub]
+        # print "Training...",
+        # hmm = HMM(ngram=args.ngram)
+        # hmm.train(training_data)
+        # print "Testing...",
+        # for eg in test_data:
+            # eg_pos = [ pos for pos,word in eg ]
+            # teststr = [ word for pos,word in eg ]
+            # seq,prob = hmm.decode(teststr)
+            # correct += sum([1.0 for a,b in zip(seq,eg_pos) if a==b])
+            # total += len(eg_pos)
+        # print "Done"
+    # print "Correct:",correct
+    # print "Total:",total
+    # print "Accuracy:",correct/total
     
-    # hmm = HMM(ngram=ngram)
-    # hmm.train(data)
-    # seq,prob = hmm.decode(teststr)
+    
+    eg = random.choice(data)
+    eg_pos = [ pos for pos,word in eg ]
+    teststr = [ word for pos,word in eg ]
+    
+    hmm = HMM(ngram=args.ngram)
+    hmm.train(data)
+    print len(hmm.pos)
+    print len(hmm.vocab)
+    print (len(eg_pos)-1)*((len(hmm.pos)**2)+(len(hmm.vocab))
     # print sum([1.0 for a,b in zip(seq,eg_pos) if a==b]) / len(eg_pos)
     
     # hmm = HMM(ngram=3)
