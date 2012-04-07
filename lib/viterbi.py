@@ -78,6 +78,7 @@ class Viterbi:
         for k in [k for k in self.yy_p.values()[0].keys() if k[0] is not None]:
           T[0][k] = self.get_yy(k[0]) * self.get_xy(x, k[0])
       elif i < self.gs: # Fill in the entries with some empty transitions
+        # Store correct values for some certain tuples (MAY BE UNNECESSARY)
         for k2 in [k for k in self.yy_p.values()[0].keys() if (Counter(k)[None] == (self.gs-i))]:
           possibilities = []
           for k in self.ytags:
@@ -87,8 +88,10 @@ class Viterbi:
             print "\t\t", tuply, val
           T_prev[i][k2], T[i][k2] = max(possibilities, key = operator.itemgetter(1))
           print "\t", k2, "=>", T_prev[i][k2], T[i][k2]
+        # Store correct values even for weird tuples that are longer than they are supposed to be
         for k2 in [k for k in self.yy_p.values()[0].keys() if (Counter(k)[None] < (self.gs-i))]:
-          T_prev[i][k2], T[i][k2] = self.extend_gs(k2[1:]), self.get_xy(x, k2) * self.get_yy(k2) * self.get_T(T, i, k2[1:])
+          k2_lim = tuple([k if j < i + 1 else None for j,k in enumerate(k2)]) # Limit tuple so that wrong P_xy and P_yy values aren't read off
+          T_prev[i][k2], T[i][k2] = self.extend_gs(k2[1:]), self.get_xy(x, k2_lim) * self.get_yy(k2_lim) * self.get_T(T, i, k2[1:])
           print "\t", k2, "=>", T_prev[i][k2], T[i][k2]
       else: # Fill in the rest of the entries with no empty transitions
         for k2 in self.ykeys:
@@ -109,7 +112,8 @@ class Viterbi:
     result = max(T[i].iteritems(), key=operator.itemgetter(1))[0] # Get max of final probabilities
     generated.append(result[0])
     while i > 0:
-      result = T_prev[i][result]
+      print result
+      result = T_prev[i][self.extend_gs(result)]
       generated.append(result[0])
       i -= 1
     generated.reverse()
@@ -124,24 +128,6 @@ if __name__ == '__main__':
     "t": {(None,): 0.3, ("a",): 0.6, ("n",): 0.1, ("o",):0.3, ("t",):0.1},
   }
   
-  yy_p2 = { 
-    "a": {(None,None): 0.8, ("a",None): 0.9, ("n",None): 0.4, ("a","a"): 0.1, ("a","n"): 0.1, ("n","a"): 0.2, ("n","n"): 0.5},
-    "n": {(None,None): 0.2, ("a",None): 0.1, ("n",None): 0.6, ("a","a"): 0.9, ("a","n"): 0.9, ("n","a"): 0.8, ("n","n"): 0.5},
-  }
-
-  xy_p2 = {
-    "A": {("a",None): 0.1, ("n",None): 0.1, ("a","a"):0.3, ("a","n"):0.2, ("n","a"):0.2, ("n","n"):0.1},
-    "T": {("a",None): 0.1, ("n",None): 0.1, ("a","a"):0.1, ("a","n"):0.2, ("n","a"):0.3, ("n","n"):0.2},
-    "N": {("a",None): 0.2, ("n",None): 0.2, ("a","a"):0.1, ("a","n"):0.1, ("n","a"):0.2, ("n","n"):0.2},
-  }
-  
-  xy_p2x = {
-    "A": {(None,): 0.0, ("a",):0.1, ("n",):0.9},
-    "T": {(None,): 0.0, ("a",):0.2, ("n",):0.8},
-    "N": {(None,): 0.0, ("a",):0.1, ("n",):0.9},
-  }
-
-
   xy_p = {
     "A": {("a",):0.4, ("n",):0.3, ("o",):0.1, ("t",):0.1},
     "T": {("a",):0.2, ("n",):0.1, ("o",):0.1, ("t",):0.4},
@@ -150,9 +136,39 @@ if __name__ == '__main__':
     "W": {("a",):0.1, ("n",):0.1, ("o",):0.5, ("t",):0.1},
   }
   
+  # Transition 3-grams
+  yy_p2 = { 
+    "a": {(None,None): 0.8, ("a",None): 0.9, ("n",None): 0.4, ("a","a"): 0.1, ("a","n"): 0.1, ("n","a"): 0.2, ("n","n"): 0.5},
+    "n": {(None,None): 0.2, ("a",None): 0.1, ("n",None): 0.6, ("a","a"): 0.9, ("a","n"): 0.9, ("n","a"): 0.8, ("n","n"): 0.5},
+  }
+
+  # Transition 4-grams
+  yy_p3 = { 
+    "a": {(None,None,None): 0.8, ("a",None,None): 0.9, ("n",None,None): 0.4, ("a","a",None): 0.1, ("a","n",None): 0.1, ("n","a",None): 0.2, ("n","n",None): 0.5, ("a","a","a"): 0.8, ("a","a","n"): 0.8, ("a","n","a"): 0.3, ("a","n","n"): 0.6, ("n","a","a"): 0.3, ("n","a","n"): 0.5, ("n","n","a"): 0.2, ("n","n","n"): 0.8},
+    "n": {(None,None,None): 0.2, ("a",None,None): 0.1, ("n",None,None): 0.6, ("a","a",None): 0.9, ("a","n",None): 0.9, ("n","a",None): 0.8, ("n","n",None): 0.5, ("a","a","a"): 0.2, ("a","a","n"): 0.2, ("a","n","a"): 0.7, ("a","n","n"): 0.4, ("n","a","a"): 0.7, ("n","a","n"): 0.5, ("n","n","a"): 0.8, ("n","n","n"): 0.2},
+  }
+
+  # Emission 3-grams
+  xy_p2 = {
+    "A": {("a",None): 0.1, ("n",None): 0.1, ("a","a"):0.3, ("a","n"):0.2, ("n","a"):0.2, ("n","n"):0.1},
+    "T": {("a",None): 0.1, ("n",None): 0.1, ("a","a"):0.1, ("a","n"):0.2, ("n","a"):0.3, ("n","n"):0.2},
+    "N": {("a",None): 0.2, ("n",None): 0.2, ("a","a"):0.1, ("a","n"):0.1, ("n","a"):0.2, ("n","n"):0.2},
+  }
+  
+  # Emission 2-grams
+  xy_p1 = {
+    "A": {(None,): 0.0, ("a",):0.1, ("n",):0.9},
+    "T": {(None,): 0.0, ("a",):0.2, ("n",):0.8},
+    "N": {(None,): 0.0, ("a",):0.1, ("n",):0.9},
+  }
+  
   # v = Viterbi(yy_p, xy_p)
   # print v.predict("TWY") # should give 'tot'
   
-  v = Viterbi(yy_p2, xy_p2)
-  print v.predict("AT") # should give aa (aa = 0.0072, na = 0.0016, an = 0.0024, nn = 0.0024)
-  print v.predict("ATA") # should give aan (aaa = 2.16e-4, aan = 4.8e-5)
+  # v = Viterbi(yy_p2, xy_p2)
+  # print v.predict("AT") # should give aa (aa = 0.0072, na = 0.0016, an = 0.0024, nn = 0.0024 [reversed in output])
+  # print v.predict("ATA") # should give aan (aaa = 2.16e-4, naa = 4.8e-5 [reversed in output])
+
+  v = Viterbi(yy_p3, xy_p2)
+  print v.predict("ATANT") # should give aannn (for N, aaa = 1.728e-5)
+  
