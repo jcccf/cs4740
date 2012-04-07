@@ -2,8 +2,7 @@
 import math,random,argparse,time,inspect
 from pprint import pprint
 from cProfile import run
-
-# CNT = 0
+from Parser import *
 
 class HMM():
     def __init__(self, ngram=2, smooth="lap"):
@@ -173,24 +172,6 @@ class HMM():
         pos = state[-1]
         return (path[pos],prob)
 
-        
-def parse_training_file(filename='data/pos_files/train.pos'):
-    data = []
-    sentence = []
-    with open(filename,'r') as f:
-        for line in f:
-            s = line.split()
-            if len(s) != 2:
-                print "ERROR:", line
-                exit(-1)
-            if s[0] == "<s>" and len(sentence) > 0:
-                data.append(sentence)
-                sentence = []
-            sentence.append( tuple(s) )
-    if len(sentence) > 0:
-        data.append(sentence)
-    return data
-            
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Test HMM.')
     parser.add_argument('-n', metavar='ngram', type=int, dest='ngram', default=2, 
