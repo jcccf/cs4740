@@ -1,5 +1,5 @@
 # from scipy.sparse import csr_matrix
-import math,random,argparse,time
+import math,random,argparse,time,inspect
 from pprint import pprint
 from cProfile import run
 
@@ -18,8 +18,8 @@ class HMM():
             self.smooth = HMM.fractional_smoothing
         elif smooth == "none":
             self.smooth = HMM.no_smoothing
-        elif smooth == "none":
-            self.smooth = HMM.no_smoothing
+        elif inspect.isfunction(smooth):
+            self.smooth = smooth
         else:
             self.smooth = HMM.no_smoothing
     
@@ -249,7 +249,7 @@ if __name__ == "__main__":
     t = time.time()
     for n in range(2,4):
         # for smooth in ["lap","frac","none"]:
-        for smooth in ["lap","none"]:
+        for smooth in [lambda x,y: HMM.fractional_smoothing(x,y,fraction=0.99)]:
             print n,
             print smooth,
             accuracy = 0
