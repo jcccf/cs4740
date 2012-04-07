@@ -69,9 +69,9 @@ def validate(model, filename='data/pos_files/validation.pos'):
     print("Accuracy: %f" % (correct_pred/(correct_pred+wrong_pred)))
             
 if __name__ == '__main__':
-    # validation
-    model = train('data/pos_files/train_split.pos')
-    validate(model, 'data/pos_files/validation_split.pos')
     # tag the test data
     model = train('data/pos_files/train.pos')
     tag_testdata(model, 'data/pos_files/test-obs.pos')
+    # validation
+    model = train('data/pos_files/train_split.pos')
+    validate(model, 'data/pos_files/validation_split.pos')
