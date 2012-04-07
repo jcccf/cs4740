@@ -1,4 +1,4 @@
-import operator
+import operator, math
 from collections import Counter
 
 #
@@ -25,24 +25,24 @@ class Viterbi:
     print "Tags:", self.ytags
     
   def get_yy(self, tup):
-    '''Return Transition Probability P(a|b,c,d...) of tup=(a,b,c,d...), extending tup if required'''
+    '''Return Log Transition Probability P(a|b,c,d...) of tup=(a,b,c,d...), extending tup if required'''
     if not isinstance(tup, tuple):
       tup = (tup,)
     if len(tup) - 1 < self.gs:
       tup += (None,) * (self.gs - (len(tup)-1))
     elif len(tup) - 1 > self.gs:
       tup = tup[:self.gs+1]
-    return self.yy_p[tup[0]][tup[1:]]
+    return math.log(self.yy_p[tup[0]][tup[1:]])
     
   def get_xy(self, x, tup):
-    '''Return Emission Probability P(x|a,b,c...) of x and tup=(a,b,c,...), extending tup if required'''
+    '''Return Log Emission Probability P(x|a,b,c...) of x and tup=(a,b,c,...), extending tup if required'''
     if not isinstance(tup, tuple):
       tup = (tup,)
     if len(tup) < self.em_gs:
       tup += (None,) * (self.em_gs - len(tup))
     elif len(tup) > self.em_gs:
       tup = tup[:self.em_gs]
-    return self.xy_p[x][tup]
+    return math.log(self.xy_p[x][tup])
     
   def get_T(self, T, i, tup):
     '''Return Computed Value of T[i][tup], extending tup'''
@@ -76,14 +76,14 @@ class Viterbi:
       print "i = ", i
       if i == 0: # Fill in the base
         for k in [k for k in self.yy_p.values()[0].keys() if k[0] is not None]:
-          T[0][k] = self.get_yy(k[0]) * self.get_xy(x, k[0])
+          T[0][k] = self.get_yy(k[0]) + self.get_xy(x, k[0])
       elif i < self.gs: # Fill in the entries with some empty transitions
         # Store correct values for some certain tuples (MAY BE UNNECESSARY)
         for k2 in [k for k in self.yy_p.values()[0].keys() if (Counter(k)[None] == (self.gs-i))]:
           possibilities = []
           for k in self.ytags:
             tuply = k2[:i] + (k,)
-            val = self.get_xy(x,tuply) * self.get_yy(tuply) * self.get_T(T, i, tuply[1:])
+            val = self.get_xy(x,tuply) + self.get_yy(tuply) + self.get_T(T, i, tuply[1:])
             possibilities.append((tuply[1:], val))
             print "\t\t", tuply, val
           T_prev[i][k2], T[i][k2] = max(possibilities, key = operator.itemgetter(1))
@@ -91,14 +91,14 @@ class Viterbi:
         # Store correct values even for weird tuples that are longer than they are supposed to be
         for k2 in [k for k in self.yy_p.values()[0].keys() if (Counter(k)[None] < (self.gs-i))]:
           k2_lim = tuple([k if j < i + 1 else None for j,k in enumerate(k2)]) # Limit tuple so that wrong P_xy and P_yy values aren't read off
-          T_prev[i][k2], T[i][k2] = self.extend_gs(k2[1:]), self.get_xy(x, k2_lim) * self.get_yy(k2_lim) * self.get_T(T, i, k2[1:])
+          T_prev[i][k2], T[i][k2] = self.extend_gs(k2[1:]), self.get_xy(x, k2_lim) + self.get_yy(k2_lim) + self.get_T(T, i, k2[1:])
           print "\t", k2, "=>", T_prev[i][k2], T[i][k2]
       else: # Fill in the rest of the entries with no empty transitions
         for k2 in self.ykeys:
           possibilities = []
           for k in self.ytags: # Loop through and pick the best
             tuply = k2 + (k,)
-            val = self.get_xy(x, tuply) * self.get_yy(tuply) * self.get_T(T, i, tuply[1:])
+            val = self.get_xy(x, tuply) + self.get_yy(tuply) + self.get_T(T, i, tuply[1:])
             possibilities.append((tuply[1:], val))
             print "\t\t", tuply, val
           T_prev[i][k2], T[i][k2] = max(possibilities, key = operator.itemgetter(1))
