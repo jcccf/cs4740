@@ -1,6 +1,10 @@
 import operator
 from collections import Counter
 
+#
+# Another HMM Implementation
+#
+
 class Viterbi:
   def __init__(self, yy_p, xy_p):
     self.yy_p = yy_p # P(pos_i|pos_i-1,...) POS tag transition probabilities, a dictionary of dictionaries (pos_i -> (pos_i-1,... -> prob))

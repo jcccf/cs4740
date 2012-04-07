@@ -85,17 +85,19 @@ class HMM():
     def decode(self, observations):
         # Uses Viterbi to infer the most likely state-sequence generating the
         # observation-sequence.
-        # observations : list of word
+        # observations : list of words
         # returns (most-likely-states, log-probability of states)
         V = dict()
         path = dict()
         prev_state = ("<s>",)*(self.ngram-1)
         word = observations[1]
+        # Initialize beginning
         for pos in self.pos:
             curr_state = prev_state[1:] + (pos,)
             V[curr_state] = ( HMM.get_log_probability(self.tp,prev_state,pos) 
                             + HMM.get_log_probability(self.ep,curr_state,word) )
             path[pos] = ("<s>",pos)
+        # Compute for subsequent words
         for word in observations[2:]:
             Vnew = dict()
             Pnew = dict()
