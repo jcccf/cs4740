@@ -24,7 +24,8 @@ for ngram in [2]:
       seq, prob = hmm.decode(eg_words)
       correct += sum([1 for a,b in zip(seq, eg_pos) if a == b])
       total += len(eg_pos)
-      print ".",
+      stdout.write(".")
+      stdout.flush
     
     print
     print "Correct:",correct
