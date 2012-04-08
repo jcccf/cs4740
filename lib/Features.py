@@ -10,13 +10,18 @@ except:
   pass
 
 class PrefixSuffixExtractor():
+    # Finds the most frequent prefixes and suffixes in a training set
+    
     def __init__(self,lb=2,ub=4):
-        self.pre = dict()
-        self.suf = dict()
+        # lb : minimum length of prefix/suffix
+        # ub : 1+maximum length of prefix/suffix
+        self.pre = dict() # Counts of prefixes
+        self.suf = dict() # Counts of suffixes
         self.lb = lb
         self.ub = ub
         
     def inc(self,d,w):
+        # increments count
         if w not in d:
             d[w] = 1
         else:
@@ -47,6 +52,9 @@ class PrefixSuffixExtractor():
             print w,c,ww,cc
 
 class PrefixSuffixFeature():
+    # Computes the feature vector for prefixes and suffixes
+    # Basically, if the word matches a commonly seen prefix/suffix
+    # then the corresponding coordinate of the vector will be set to 1.
     def __init__(self,cache_file='data/features/prefix_suffix.dat'):
         with open(cache_file,'r') as f:
             pre,suf,lb,ub = pickle.load(f)
@@ -55,6 +63,9 @@ class PrefixSuffixFeature():
         self.lb = lb
         self.ub = ub
     def transform(self,observations,position):
+        # Actual function called to compute
+        # Vector is represented as a sparse vector with
+        # a lit of (index,value) tuples
         word = observations[position]
         f = []
         for nfix in range( self.lb, min(self.ub, len(word)) ):
@@ -63,12 +74,15 @@ class PrefixSuffixFeature():
             if word[-nfix:] in self.suf:
                 f.append( (len(self.pre)+self.suf[ word[-nfix:] ], 1) )
         return f
+    # Length functions return the length of the full feature vector
     def len(self):
         return len(self.pre)+len(self.suf)
     def __len__(self):
         return self.len()
 
 class WordExtractor():
+    # Extracts the vocabulary of the training set
+    
     def __init__(self):
         self.vocab = set()
     
@@ -83,6 +97,8 @@ class WordExtractor():
         return list(self.vocab)
 
 class POSExtractor():
+    # Extracts the set of parts-of-speech tags used
+    
     def __init__(self):
         self.vocab = set()
     
@@ -97,25 +113,34 @@ class POSExtractor():
         return [ pos for pos in self.vocab ]
 
 class WordFeature():
+    # Extracts word feature.  Loads the pre-computed vocabulary
+    # and if a given word matches a vocabulary word, the corresponding
+    # coordinate of the feature vector is set to 1
+    
     def __init__(self,cache_file='data/features/words.dat'):
         with open(cache_file,'r') as f:
             words = pickle.load(f)
         self.words = dict( zip(words,range(len(words))) )
     def transform(self,observations,position):
+        # Actual computation of sparse feature vector
         word = observations[position]
         if word in self.words:
             return [ (self.words[word],1) ]
         else:
             return []
+    # Length functions return the length of the full feature vector
     def len(self):
         return len(self.words)
     def __len__(self):
         return self.len()
 
 class CapitalizedFeature():
+    # Extracts features of whether the first char of a word is 
+    # capitalized, and whether a word is all-capitals
     def __init__(self):
         self.caps = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     def transform(self,observations,position):
+        # Computes sparse feature vector
         word = observations[position]
         f = []
         if word[0] in self.caps:
@@ -123,12 +148,17 @@ class CapitalizedFeature():
             if all( [ w in self.caps for w in word[1:] ] ):
                 f.append( (1,1) ) # All capitals
         return f
+    # Length functions return the length of the full feature vector
     def len(self):
         return 2
     def __len__(self):
         return self.len()
 
 class FeatureVectorizer():
+    # Takes a list of features, and computes them over a specified 
+    # window, and returns a sparse vector of features
+    # Makes sure that the indices do not overlap between different
+    # sets of features
     def __init__(self,window=[-1,0,1], features=[]
                 # features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature()]
                 ):
@@ -137,6 +167,7 @@ class FeatureVectorizer():
         self.feature_len = sum( [len(f) for f in self.features] )
         
     def transform(self,observations,position):
+        # Actual computation of sparse feature vector
         idx_base = 1
         f = []
         for w in self.window:
@@ -150,6 +181,7 @@ class FeatureVectorizer():
         f = sorted(f, cmp=lambda (a,b),(c,d): a-c)
         return f
     
+    # Length functions return the length of the full feature vector
     def len(self):
         return len(self.window)*self.feature_len
 
@@ -195,8 +227,8 @@ if __name__ == "__main__":
             pos = pickle.load(f)
         POS_to_idx = dict( zip(pos,range(1,1+len(pos))) )
         
-        fv = FeatureVectorizer(features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature()])
-        # fv = FeatureVectorizer(features=[WordFeature()])
+        # fv = FeatureVectorizer(features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature()])
+        fv = FeatureVectorizer(features=[WordFeature()])
         print "Total number of features:",fv.len()
         # exit(0)
         if args.trainfile != None:
