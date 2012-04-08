@@ -8,7 +8,7 @@ except:
   pass
   
 GENERATE_FEATURE_FILES = False
-C_range = [100000]
+C_range = [10000]
 is_win = "win" in sys.platform
 if __name__ == "__main__":
     if GENERATE_FEATURE_FILES:
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         p = sp.Popen(cmd,shell=True)
         out,err = p.communicate()
         
-        cmd = 'python generate_kaggle.py -t data/pos_files/test-obs.pos.features -i data/output/out_%g.txt -o data/output/kaggle_%g.txt'
+        cmd = 'python generate_kaggle.py -t data/pos_files/test-obs.pos -i data/output/out_%g.txt -o data/output/kaggle_%g.txt'
         cmd = cmd%( C, C )
         cmd = cmd.replace('/',os.sep)
         print cmd
