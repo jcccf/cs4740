@@ -2,6 +2,7 @@ import argparse,os
 import cPickle as pickle
 from pprint import pprint
 from Parser import *
+from collections import Counter
 
 # Make cache directories if they don't exist
 try:
@@ -133,6 +134,32 @@ class WordFeature():
         return len(self.words)
     def __len__(self):
         return self.len()
+        
+class WordLengthFeature():
+  def __init__(self,cache_file='data/features/words.dat'):
+    with open(cache_file, 'r') as f:
+      words = pickle.load(f)
+    self.maxlen = float(max([len(word) for word in words]))
+  def transform(self, observations, position):
+    word = observations[position]
+    return [(0, len(word)/self.maxlen)]
+  def len(self):
+    return 1
+  def __len__(self):
+    return self.len()
+  
+class LetterFrequencyFeature():
+  def __init__(self):
+    pass
+  def transform(self, observations, position):
+    word = [w for w in observations[position].lower() if w in "abcdefghijklmnopqrstuvwxyz"]
+    wordlen = float(len(word))
+    c = Counter(word)
+    return [(ord(w)-ord('a'), v/wordlen) for w, v in c.iteritems()]
+  def len(self):
+    return 26
+  def __len__(self):
+    return self.len()
 
 class CapitalizedFeature():
     # Extracts features of whether the first char of a word is 
@@ -227,8 +254,8 @@ if __name__ == "__main__":
             pos = pickle.load(f)
         POS_to_idx = dict( zip(pos,range(1,1+len(pos))) )
         
-        # fv = FeatureVectorizer(features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature()])
-        fv = FeatureVectorizer(features=[WordFeature()])
+        fv = FeatureVectorizer(features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature(),WordLengthFeature(),LetterFrequencyFeature()])
+        # fv = FeatureVectorizer(features=[WordFeature()])
         print "Total number of features:",fv.len()
         # exit(0)
         if args.trainfile != None:

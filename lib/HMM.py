@@ -36,6 +36,9 @@ class HMM():
     def laplacian_smoothing(prob,vocab):
         # Applies add-one smoothing, and normalizes counts
         # to log-probabilities
+        # Note: special key -1 used to catch all cases that
+        # were not seen in the training set, since our
+        # representation is sparse
         vocabsize = len(vocab)
         for d in prob.itervalues():
             total = sum(d.itervalues())
@@ -50,6 +53,9 @@ class HMM():
         # Applies smoothing where none-transitions occupy
         # <fraction> probability.
         # Normalizes counts to log-probabilities
+        # Note: special key -1 used to catch all cases that
+        # were not seen in the training set, since our
+        # representation is sparse
         vocabsize = len(vocab)
         p = float(fraction)
         omp = 1.0-p
@@ -64,6 +70,9 @@ class HMM():
     @staticmethod
     def no_smoothing(prob,vocab):
         # Just normalizes counts
+        # Note: special key -1 used to catch all cases that
+        # were not seen in the training set, since our
+        # representation is sparse
         for d in prob.itervalues():
             total = math.log(sum(d.itervalues()))
             for key,val in d.iteritems():
@@ -73,13 +82,14 @@ class HMM():
         
     @staticmethod
     def get_log_probability(prob,curr,word):
+        # Returns log( Pr[ word | curr ] )
         if curr not in prob:
-            return prob[-1]
+            return prob[-1] # Special catch-all case
         d = prob[curr]
         if word in d:
             return d[word]
         else:
-            return d[-1]
+            return d[-1] # Special catch-all case
     
     def train(self, data):
         # data = list of [list of (POS,word) tuples]

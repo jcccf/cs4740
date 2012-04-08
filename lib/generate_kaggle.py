@@ -3,8 +3,7 @@ from Parser import *
 import cPickle as pickle
 
 if __name__ == "__main__":
-    
-    parser = argparse.ArgumentParser(description='Generates training/test files.')
+    parser = argparse.ArgumentParser(description='Generates kaggle submission files.')
     parser.add_argument('-d', type=str, metavar='DIR', dest='outdir', default='data/features/',
                        help='Where to load pickled data')
     parser.add_argument('-i', type=argparse.FileType('r'), metavar='FILE', dest='infile',

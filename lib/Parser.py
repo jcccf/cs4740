@@ -1,5 +1,7 @@
         
 def parse_opened_training_file(f):
+    # Parses _opened_ file <f> and
+    # returns a list of [ list of (POS, word) tuples ]
     data = []
     sentence = []
     for line in f:
@@ -16,10 +18,13 @@ def parse_opened_training_file(f):
     return data
     
 def parse_training_file(filename='data/pos_files/train.pos'):
+    # Opens the file and passes it along
     with open(filename,'r') as f:
         return parse_opened_training_file(f)
 
 def parse_opened_test_file(f):
+    # Parses _opened_ file <f> and
+    # returns a list of [ list of word ]
     data = []
     sentence = []
     for s in f:
@@ -32,7 +37,7 @@ def parse_opened_test_file(f):
         data.append(sentence)
     return data
 
-
 def parse_test_file(filename='data/pos_files/test-obs.pos'):
+    # Opens the file and passes it along
     with open(filename,'r') as f:
         return parse_opened_test_file(f)
