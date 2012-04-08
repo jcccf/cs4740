@@ -1,5 +1,6 @@
 # HMM Main
 import Parser, HMM, random
+from sys import stdout
 random.seed(1023)
 
 data = Parser.parse_training_file()
@@ -21,7 +22,7 @@ for ngram in [2]:
     correct, total = 0, 0
     for eg in val_data:
       eg_pos, eg_words = zip(*eg)
-      seq, prob = hmm.decode(eg_words)
+      seq, prob = hmm.decode_fast(eg_words)
       correct += sum([1 for a,b in zip(seq, eg_pos) if a == b])
       total += len(eg_pos)
       stdout.write(".")
