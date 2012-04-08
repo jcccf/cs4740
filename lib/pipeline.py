@@ -22,7 +22,7 @@ test_file = 'data/pos_files/test-obs.pos'
 
 # svm_hmm is platform dependent, so we check if the platform
 # is Windows or unix-like
-is_win = "win" in sys.platform
+is_win = os.name is "nt"
 
 if __name__ == "__main__":
     if GENERATE_FEATURE_FILES:
