@@ -39,7 +39,7 @@ def tag_testdata(model, filename='data/pos_files/test-obs.pos'):
                     # word did not occur in training corpus
                     # tag it as NNP since it is likely to be a name
                     fout.write("NNP"+" "+s[0]+"\n")
-    print("done")
+    #print("done")
     
 def validate(model, filename='data/pos_files/validation.pos'):
     wrong_pred = 0.0
@@ -61,17 +61,22 @@ def validate(model, filename='data/pos_files/validation.pos'):
                     # tag it as NNP since it is likely to be a name
                     predict = "NNP"
                 if (predict == s[0]):
-                    print(predict + " c " + s[0])
                     correct_pred += 1
                 else:
-                    print(predict + " w " + s[0])
                     wrong_pred += 1
-    print("Accuracy: %f" % (correct_pred/(correct_pred+wrong_pred)))
+    return (correct_pred/(correct_pred+wrong_pred))
             
 if __name__ == '__main__':
     # tag the test data
     model = train('data/pos_files/train.pos')
     tag_testdata(model, 'data/pos_files/test-obs.pos')
     # validation
-    model = train('data/pos_files/train_split.pos')
-    validate(model, 'data/pos_files/validation_split.pos')
+    #model = train('data/pos_files/train_split.pos')
+    #accuracy = validate(model, 'data/pos_files/validation_split.pos')
+    #print("Accuracy: %f" % accuracy)
+    accuracy = 0.0
+    for i in range(10):
+        model = train('data/pos_files/train_split%d.pos' % i)
+        accuracy += validate(model, 'data/pos_files/validation_split%d.pos' % i)
+    accuracy = accuracy / 10.0
+    print("Accuracy: %f" % accuracy)
