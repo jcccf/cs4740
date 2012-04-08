@@ -63,7 +63,7 @@ class PrefixSuffixFeature():
         self.suf = dict( zip(suf,range(len(suf))) )
         self.lb = lb
         self.ub = ub
-    def transform(self,observations,position):
+    def transform(self,observations,position,window_pos):
         # Actual function called to compute
         # Vector is represented as a sparse vector with
         # a lit of (index,value) tuples
