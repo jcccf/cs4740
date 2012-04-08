@@ -163,10 +163,10 @@ class LetterFrequencyFeature():
     
 class SentenceLengthFeature():
   def __init__(self):
-    self.maxlen = 250.0 # HARDCODED VALUE
+    self.maxlen = 60.0 # HARDCODED VALUE
   def transform(self, observations, position, window_pos):
     if window_pos == 0:
-      return [(0,len(observations)/self.maxlen)]
+      return [(0,min(60,len(observations)/self.maxlen))]
     else:
       return []
   def len(self):
