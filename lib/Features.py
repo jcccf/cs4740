@@ -122,7 +122,7 @@ class WordFeature():
         with open(cache_file,'r') as f:
             words = pickle.load(f)
         self.words = dict( zip(words,range(len(words))) )
-    def transform(self,observations,position):
+    def transform(self,observations,position,window_pos):
         # Actual computation of sparse feature vector
         word = observations[position]
         if word in self.words:
@@ -140,7 +140,7 @@ class WordLengthFeature():
     with open(cache_file, 'r') as f:
       words = pickle.load(f)
     self.maxlen = float(max([len(word) for word in words]))
-  def transform(self, observations, position):
+  def transform(self, observations, position, window_pos):
     word = observations[position]
     return [(0, len(word)/self.maxlen)]
   def len(self):
@@ -151,7 +151,7 @@ class WordLengthFeature():
 class LetterFrequencyFeature():
   def __init__(self):
     pass
-  def transform(self, observations, position):
+  def transform(self, observations, position, window_pos):
     word = [w for w in observations[position].lower() if w in "abcdefghijklmnopqrstuvwxyz"]
     wordlen = float(len(word))
     c = Counter(word)
@@ -160,13 +160,26 @@ class LetterFrequencyFeature():
     return 26
   def __len__(self):
     return self.len()
-
+    
+class SentenceLengthFeature():
+  def __init__(self):
+    self.maxlen = 250.0 # HARDCODED VALUE
+  def transform(self, observations, position, window_pos):
+    if window_pos == 0:
+      return [(0,len(observations)/self.maxlen)]
+    else:
+      return []
+  def len(self):
+    return 1
+  def __len__(self):
+    return self.len()
+  
 class CapitalizedFeature():
     # Extracts features of whether the first char of a word is 
     # capitalized, and whether a word is all-capitals
     def __init__(self):
         self.caps = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    def transform(self,observations,position):
+    def transform(self,observations,position, window_pos):
         # Computes sparse feature vector
         word = observations[position]
         f = []
@@ -202,7 +215,7 @@ class FeatureVectorizer():
                 idx_base += self.feature_len
             else:
                 for feat in self.features:
-                    g = feat.transform(observations,position+w)
+                    g = feat.transform(observations,position+w,w)
                     f.extend( [ (i+idx_base,v) for i,v in g ] )
                     idx_base += len(feat)
         f = sorted(f, cmp=lambda (a,b),(c,d): a-c)
@@ -254,7 +267,7 @@ if __name__ == "__main__":
             pos = pickle.load(f)
         POS_to_idx = dict( zip(pos,range(1,1+len(pos))) )
         
-        fv = FeatureVectorizer(features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature(),WordLengthFeature(),LetterFrequencyFeature()])
+        fv = FeatureVectorizer(features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature(),WordLengthFeature(),LetterFrequencyFeature(),SentenceLengthFeature()])
         # fv = FeatureVectorizer(features=[WordFeature()])
         print "Total number of features:",fv.len()
         # exit(0)

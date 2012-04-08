@@ -9,8 +9,8 @@ print train_len, test_len
 split = int((train_len - 0.0) * 0.8)
 train_data, val_data = data[:split], data[split:]
 
-for ngram in [2,3,4]:
-  for smooth in ["lap", "frac", "none"]:
+for ngram in [2]:
+  for smooth in ["none"]:
     print "NGram: ", ngram, " Smooth: ", smooth
     
     hmm = HMM.HMM(ngram=ngram, smooth=smooth)
