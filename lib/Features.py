@@ -178,7 +178,7 @@ class CapitalizedFeature():
     # Extracts features of whether the first char of a word is 
     # capitalized, and whether a word is all-capitals
     def __init__(self):
-        self.caps = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        self.caps = set([c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"])
     def transform(self,observations,position, window_pos):
         # Computes sparse feature vector
         word = observations[position]
@@ -197,13 +197,14 @@ class CapitalizedFeature():
 class NumberFeature():
     # Extracts features of whether the word is numeric
     def __init__(self):
-        pass
+        self.chars = set([c for c in "0123456789."])
+        self.nums = set([c for c in "0123456789"])
     def transform(self,observations,position, window_pos):
         # Computes sparse feature vector
         word = observations[position]
         f = []
-        if all( [ c in "0123456789." for c in word ] ) \
-            and any( [ c in "0123456789" for c in word ] ):
+        if all( [ c in self.chars for c in word ] ) \
+            and any( [ c in self.nums for c in word ] ):
             f.append( (0,1) )
         return f
     # Length functions return the length of the full feature vector
@@ -217,7 +218,7 @@ class PunctuationFeature():
     def __init__(self,cache_file='data/features/words.dat'):
         with open(cache_file, 'r') as f:
             words = pickle.load(f)
-        numbers_letters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        numbers_letters = set([c for c in "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"])
         punctuation = [ w for w in words if not any( [c for c in w if c in numbers_letters] ) ]
         self.punctuation = dict( zip(punctuation,range(len(punctuation))) )
     def transform(self,observations,position, window_pos):
