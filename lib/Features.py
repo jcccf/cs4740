@@ -13,7 +13,7 @@ except:
 class PrefixSuffixExtractor():
     # Finds the most frequent prefixes and suffixes in a training set
     
-    def __init__(self,lb=2,ub=4):
+    def __init__(self,lb=1,ub=5):
         # lb : minimum length of prefix/suffix
         # ub : 1+maximum length of prefix/suffix
         self.pre = dict() # Counts of prefixes
@@ -37,7 +37,7 @@ class PrefixSuffixExtractor():
                     self.inc(self.suf, word[-nfix:])
         return self
                     
-    def get(self,ntop=100):
+    def get(self,ntop=1000):
         # Returns top <ntop> prefixes and suffixes as lists
         pre = sorted(self.pre.iteritems(), cmp=lambda (a,b),(c,d): d-b)
         suf = sorted(self.suf.iteritems(), cmp=lambda (a,b),(c,d): d-b)
@@ -45,7 +45,7 @@ class PrefixSuffixExtractor():
         suf = [ w for w,c in suf[:ntop] ]
         return (pre,suf,self.lb,self.ub)
 
-    def show(self,ntop=100):
+    def show(self,ntop=1000):
         # Prints the most common prefixes and suffixes
         pre = sorted(self.pre.iteritems(), cmp=lambda (a,b),(c,d): d-b)
         suf = sorted(self.suf.iteritems(), cmp=lambda (a,b),(c,d): d-b)
@@ -178,7 +178,7 @@ class CapitalizedFeature():
     # Extracts features of whether the first char of a word is 
     # capitalized, and whether a word is all-capitals
     def __init__(self):
-        self.caps = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        self.caps = set([c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"])
     def transform(self,observations,position, window_pos):
         # Computes sparse feature vector
         word = observations[position]
@@ -194,6 +194,49 @@ class CapitalizedFeature():
     def __len__(self):
         return self.len()
 
+class NumberFeature():
+    # Extracts features of whether the word is numeric
+    def __init__(self):
+        self.chars = set([c for c in "0123456789."])
+        self.nums = set([c for c in "0123456789"])
+    def transform(self,observations,position, window_pos):
+        # Computes sparse feature vector
+        word = observations[position]
+        f = []
+        if all( [ c in self.chars for c in word ] ) \
+            and any( [ c in self.nums for c in word ] ):
+            f.append( (0,1) )
+        return f
+    # Length functions return the length of the full feature vector
+    def len(self):
+        return 1
+    def __len__(self):
+        return self.len()
+    
+class PunctuationFeature():
+    # Extracts the kinds of punctuation in the sentence
+    def __init__(self,cache_file='data/features/words.dat'):
+        with open(cache_file, 'r') as f:
+            words = pickle.load(f)
+        numbers_letters = set([c for c in "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"])
+        punctuation = [ w for w in words if not any( [c for c in w if c in numbers_letters] ) ]
+        self.punctuation = dict( zip(punctuation,range(len(punctuation))) )
+    def transform(self,observations,position, window_pos):
+        # Computes sparse feature vector
+        if window_pos == 0:
+            v = set()
+            for word in observations:
+                if word in self.punctuation:
+                    v.add(self.punctuation[word])
+            return [ (idx,1) for idx in sorted(v) ]
+        else:
+            return []
+    # Length functions return the length of the full feature vector
+    def len(self):
+        return len(self.punctuation)
+    def __len__(self):
+        return self.len()
+    
 class FeatureVectorizer():
     # Takes a list of features, and computes them over a specified 
     # window, and returns a sparse vector of features
@@ -230,8 +273,10 @@ class FeatureVectorizer():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates training/test files.')
-    parser.add_argument('-n', metavar='N_TOP', type=int, dest='ntop', default=1000, 
+    parser.add_argument('-n', metavar='N_TOP', type=int, dest='ntop', default=100000, 
                        help='number of top prefix/suffix to use')
+    parser.add_argument('-w', metavar='WINDOW_SIZE', type=int, dest='windowsize', default=3, 
+                       help='Size of feature window')
     parser.add_argument('-g', dest='generate', action='store_true',
                        help='Whether to generate feature set(s)')
     parser.add_argument('-d', type=str, metavar='DIR', dest='outdir', default='data/features/',
@@ -267,7 +312,19 @@ if __name__ == "__main__":
             pos = pickle.load(f)
         POS_to_idx = dict( zip(pos,range(1,1+len(pos))) )
         
-        fv = FeatureVectorizer(features=[CapitalizedFeature(),WordFeature(),PrefixSuffixFeature(),WordLengthFeature(),LetterFrequencyFeature(),SentenceLengthFeature()])
+        window = range( -(args.windowsize/2), 1+args.windowsize/2 )
+        print "Window:"," ".join(str(window))
+        fv = FeatureVectorizer(window=window,
+                features=
+                [CapitalizedFeature(),
+                WordFeature(),
+                PrefixSuffixFeature(),
+                WordLengthFeature(),
+                LetterFrequencyFeature(),
+                SentenceLengthFeature(),
+                PunctuationFeature(),
+                NumberFeature()
+                ])
         # fv = FeatureVectorizer(features=[WordFeature()])
         print "Total number of features:",fv.len()
         # exit(0)
