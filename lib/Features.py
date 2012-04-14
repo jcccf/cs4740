@@ -13,7 +13,7 @@ except:
 class PrefixSuffixExtractor():
     # Finds the most frequent prefixes and suffixes in a training set
     
-    def __init__(self,lb=1,ub=5):
+    def __init__(self,lb=2,ub=4):
         # lb : minimum length of prefix/suffix
         # ub : 1+maximum length of prefix/suffix
         self.pre = dict() # Counts of prefixes
@@ -273,7 +273,7 @@ class FeatureVectorizer():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates training/test files.')
-    parser.add_argument('-n', metavar='N_TOP', type=int, dest='ntop', default=100000, 
+    parser.add_argument('-n', metavar='N_TOP', type=int, dest='ntop', default=1000, 
                        help='number of top prefix/suffix to use')
     parser.add_argument('-w', metavar='WINDOW_SIZE', type=int, dest='windowsize', default=3, 
                        help='Size of feature window')
