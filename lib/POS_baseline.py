@@ -24,7 +24,7 @@ def train(filename='data/pos_files/train.pos'):
 
 def tag_testdata(model, filename='data/pos_files/test-obs.pos'):
     with open(filename,'r') as f:
-        with open('data/pos_files/predictions.pos','w') as fout:
+        with open('data/baselinepredictions.pos','w') as fout:
             for line in f:
                 s = line.split()
                 if len(s) != 1:
@@ -74,9 +74,9 @@ if __name__ == '__main__':
     #model = train('data/pos_files/train_split.pos')
     #accuracy = validate(model, 'data/pos_files/validation_split.pos')
     #print("Accuracy: %f" % accuracy)
-    accuracy = 0.0
-    for i in range(10):
-        model = train('data/pos_files/train_split%d.pos' % i)
-        accuracy += validate(model, 'data/pos_files/validation_split%d.pos' % i)
-    accuracy = accuracy / 10.0
-    print("Accuracy: %f" % accuracy)
+    #accuracy = 0.0
+    #for i in range(10):
+    #    model = train('data/pos_files/train_split%d.pos' % i)
+    #    accuracy += validate(model, 'data/pos_files/validation_split%d.pos' % i)
+    #accuracy = accuracy / 10.0
+    #print("Accuracy: %f" % accuracy)

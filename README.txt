@@ -9,7 +9,7 @@ Usage:
 0. Unzip data files to the "lib/data/" folder (thus creating folder "lib/data/pos_files").  Place svm_hmm binaries in "lib/".  Change directory into "lib/".
 
 For running the baseline:
-1. Use POS_baseline.py to run our baseline method.  Generated output is saved as "lib/data/pos_files/predictions.pos"
+1. Use POS_baseline.py to run our baseline method.  Generated output is saved as "lib/data/baselinepredictions.pos"
 
 For running our HMM implementation:
 1. Use hmm_main.py to run our HMM model.  Generated output is saved as "lib/data/kaggle_hmm.txt".  Line 11 sets the options for the HMM model, and the options are described in the preceding lines.
