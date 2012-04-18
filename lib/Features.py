@@ -4,7 +4,8 @@ from Parser import *
 from Features_impl import *
 
 # List of types of features to use
-FeatureSet = [  CapitalizedFeature,
+FeatureSet = [  
+                CapitalizedFeature,
                 WordFeature,
                 PrefixSuffixFeature,
                 WordLengthFeature,
@@ -67,7 +68,10 @@ if __name__ == "__main__":
         print "Total number of features:",fv.len()
         # exit(0)
         if args.trainfile != None:
+            print "Parsing training data...",
             training_data = parse_opened_training_file(args.trainfile)
+            print "done"
+            print "Generating features...",
             with open(args.trainfile.name + ".features",'w') as output_file:
                 for qid,sequence in enumerate(training_data):
                     qid = qid+1
@@ -82,8 +86,12 @@ if __name__ == "__main__":
                         output_file.write(line)
                         line = " # %s\n"%words[position]
                         output_file.write(line)
+            print "done"
         if args.testfile != None:
+            print "Parsing test data...",
             training_data = parse_opened_test_file(args.testfile)
+            print "done"
+            print "Generating features...",
             with open(args.testfile.name + ".features",'w') as output_file:
                 tag = 1
                 for qid,sequence in enumerate(training_data):
@@ -97,10 +105,10 @@ if __name__ == "__main__":
                         output_file.write(line)
                         line = " # %s\n"%words[position]
                         output_file.write(line)
-    
-    
-    
-    
-    
-    
-    
+            print "done"
+
+
+
+
+
+
