@@ -8,12 +8,12 @@ except:
   pass
 
 # Set to False if features have been generated already
-GENERATE_FEATURE_FILES = False
-# GENERATE_FEATURE_FILES = True
+GENERATE_FEATURE_FILES = True
+# GENERATE_FEATURE_FILES = False
 
 # Range of values for SVM parameter to prevent overfitting
 # C_range = [0.1,1,10,100,1000,100000]
-C_range = [10000]
+C_range = [10000] # Best value found
 
 # Width of window for features (odd numbers only)
 window_size = 3
