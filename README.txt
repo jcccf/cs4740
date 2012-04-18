@@ -3,13 +3,22 @@ Justin Cheng (jc882) , Marcus Lim (mkl65), Yi heng Lee (yl478)
 
 Requirements
 - Python 2.7+
-- svm_hmm binaries (http://svmlight.joachims.org/svm_struct.html)
+- svm_hmm binaries (http://svmlight.joachims.org/svm_struct.html) if you want to use the SVM HMM tagger
 
 Usage:
 0. Unzip data files to the "lib/data/" folder (thus creating folder "lib/data/pos_files").  Place svm_hmm binaries in "lib/".  Change directory into "lib/".
+
+For running the baseline:
+1. Use POS_baseline.py to run our baseline method.  Generated output is saved as "lib/data/pos_files/predictions.pos"
+
+For running our HMM implementation:
+1. Use hmm_main.py to run our HMM model.  Generated output is saved as "lib/data/kaggle_hmm.txt".  Line 11 sets the options for the HMM model, and the options are described in the preceding lines.
+
+For running the SVM HMM tagger:
 1. Use pipeline.py to run the entire pipeline:
     a. Call Features.py to generate features for training and test data
     b. Call svm_hmm_learn to learn a linear model for the features
+	(svm_hmm_learn requires a large amount of memory to run, it can fail if the computer runs out of memory)
     c. Call svm_hmm_classify to generate predictions for test data
     d. Call generate_kaggle.py to interpret output from svm_hmm_classify and generate output in the format for online submission.  
     e. Final output is written to "lib/data/output/" folder.  There are three files: 
@@ -17,5 +26,4 @@ Usage:
         ii.  model_*.txt is the learned model
         iii. kaggle_*.txt is the output predictions in format suitable for online submission
 2. Edit Features.py to choose the types of features to use.  Lines 8-15 lists the types of features used, and can be commented out to include/exclude some types of features.
-3. Use hmm_main.py to run our HMM model.  Generated output is saved as "lib/data/kaggle_hmm.txt".  Line 11 sets the options for the HMM model, and the options are described in the preceding lines.
-4. Use POS_baseline.py to run our baseline method.  Generated output is saved as "lib/data/pos_files/predictions.pos"
+
