@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-import nltk, glob, re, json, cPickle as pickle, os.path
-from lxml import etree
-from lxml import html
+# Parser to parse documents, questions
 
-#
 # Useful formats you need to know
 # /parsed_docs
 #     List of { "docno": docno, "title": title, "leadpara": leadpara, "text": text}
@@ -20,6 +17,10 @@ from lxml import html
 #         "nouns": list of nouns in the question,
 #         "nes": list of NEs, and these are tuples of (NE_TYPE, word)
 #       }
+
+import nltk, glob, re, json, cPickle as pickle, os.path
+from lxml import etree
+from lxml import html
 
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
