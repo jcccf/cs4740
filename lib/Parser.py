@@ -11,7 +11,15 @@ from lxml import html
 # /parsed_docs_posne
 #     List of { "title": { "pos": List of sentences, "ne": List of nltk NE trees }, "leadpara": { "pos": List of sentences, "ne": List of nltk NE trees },...
 #     * Same indices as /parsed_docs
-#
+# /parsed_questions.txt
+#     Dict of Question Number : { 
+#         "question": question text, 
+#         "raw_pos": pos tags,
+#         "raw_ne": NE tree,
+#         "qwords": list of question words,
+#         "nouns": list of nouns in the question,
+#         "nes": list of NEs, and these are tuples of (NE_TYPE, word)
+#       }
 
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
@@ -81,6 +89,36 @@ def generate_pos_ne():
     with open('data/train/parsed_docs_posne/%s' % os.path.basename(filename), 'wb') as f:
       pickle.dump(pdocs, f)
 
+# Identify the question type and parse out the NEs
+def parse_questions():
+  parsed_questions = {}
+  with open('data/train/questions.txt', 'r') as f:
+    data = f.read()
+    questions = re.split('[\s]*</top>[\s]*', data)
+    assert len(questions) == 200
+    questions.pop()
+    for question in questions:
+      question_number = re.search(r"<num>[\s]*Number:[\s]*([0-9]+)", question).group(1)
+      question = re.search(r"<desc>[\s]*Description:[\s]*([a-zA-Z0-9\-\?\'\. ]+)", question).group(1)
+      question_words = nltk.word_tokenize(question)
+      question_pos = nltk.pos_tag(question_words)
+      question_nes = nltk.ne_chunk(question_pos)
+      qwords, nouns, nes = [], [], []
+      for part in question_nes:
+        try:
+          nes.append((part.node, part.leaves()[0][0]))
+        except:
+          if part[1] == 'WP' or part[1] == 'WRB':
+            qwords.append(part[0])
+          elif part[1] == 'NN' or part[1] == 'NNP':
+            nouns.append(part[0])
+      print qwords, nouns, nes
+      print question_pos
+      parsed_questions[question_number] = { "question": question, "raw_pos": question_pos, "raw_ne": question_nes, "qwords": qwords, "nouns": nouns, "nes": nes }
+  with open('data/train/parsed_questions.txt', 'wb') as f:
+    pickle.dump(parsed_questions, f)
+
 if __name__ == '__main__':
   parse_docs()
+  parse_questions()
   generate_pos_ne()
