@@ -14,17 +14,19 @@
 # /parsed_questions.txt
 #     Dict of Question Number : { 
 #         "question": question text, 
-#         "raw_pos": pos tags,
-#         "raw_ne": NE tree,
-#         "qwords": list of question words,
+#         "pos": pos tags,
+#         "ne": NE tree,
+#         "parse_tree": Parse tree of sentence
+#         "question_words": list of question words,
 #         "nouns": list of nouns in the question,
-#         "nes": list of NEs, and these are tuples of (NE_TYPE, word)
+#         "ne_words": list of NEs, and these are tuples of (NE_TYPE, word)
 #       }
 
 import nltk, glob, re, json, cPickle as pickle, os.path
 from lxml import etree
 from lxml import html
 import Chunker
+import QuestionClassifier
 
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
@@ -99,18 +101,22 @@ def generate_pos_ne():
 
 # Identify the question type and parse out the NEs
 def parse_questions():
+  print "Parsing Questions..."
   parsed_questions = {}
   with open('data/train/questions.txt', 'r') as f:
     data = f.read()
     questions = re.split('[\s]*</top>[\s]*', data)
     assert len(questions) == 200
     questions.pop()
+    qc = QuestionClassifier.QuestionClassifier()
     for question in questions:
-      question_number = re.search(r"<num>[\s]*Number:[\s]*([0-9]+)", question).group(1)
+      question_number = int(re.search(r"<num>[\s]*Number:[\s]*([0-9]+)", question).group(1))
       question = re.search(r"<desc>[\s]*Description:[\s]*([a-zA-Z0-9\-\?\'\. ]+)", question).group(1)
       question_words = nltk.word_tokenize(question)
       question_pos = nltk.pos_tag(question_words)
       question_nes = nltk.ne_chunk(question_pos)
+      question_tree = Chunker.chunker.parse(question_pos)
+      question_classification = qc.classify(question)
       qwords, nouns, nes = [], [], []
       for part in question_nes:
         try:
@@ -120,13 +126,13 @@ def parse_questions():
             qwords.append(part[0])
           elif part[1] == 'NN' or part[1] == 'NNP':
             nouns.append(part[0])
-      print qwords, nouns, nes
-      print question_pos
-      parsed_questions[question_number] = { "question": question, "raw_pos": question_pos, "raw_ne": question_nes, "qwords": qwords, "nouns": nouns, "nes": nes }
+      # print qwords, nouns, nes
+      # print question_pos
+      parsed_questions[question_number] = { "question": question, "pos": question_pos, "ne": question_nes, "parse_tree": question_tree, "question_classification": question_classification, "question_words": qwords, "nouns": nouns, "ne_words": nes }
   with open('data/train/parsed_questions.txt', 'wb') as f:
     pickle.dump(parsed_questions, f)
 
 if __name__ == '__main__':
-  parse_docs()
+  # parse_docs()
   parse_questions()
-  generate_pos_ne()
+  # generate_pos_ne()

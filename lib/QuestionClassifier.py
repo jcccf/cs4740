@@ -27,20 +27,24 @@ def train_classifier():
     classifier = nltk.NaiveBayesClassifier.train(train_set)
     return classifier
 
-def classify(question):
-    return classifier.classify(question_features(question))
+class QuestionClassifier:
+  def __init__(self):
+    self.classifier = train_classifier()
+  
+  def classify(self, question):
+    return self.classifier.classify(question_features(question))
 
 if __name__ == '__main__':
-    classifier = train_classifier()
+    classifier = QuestionClassifier()
     test_set = []
     with open('data/train/qc/TREC_10.label', 'r') as f2:
         for line in f2:
             #match = re.match('([A-Z]+):[a-z]+ (.+)', line)
             match = re.match('([A-Z]+:[a-z]+) (.+)', line)
             test_set.append((question_features(match.groups()[1]),match.groups()[0]))
-    print nltk.classify.accuracy(classifier, test_set)
-    print classify('How much money does the Sultan of Brunei have?')
-    print classify('When did Geraldine Ferraro run for vice president?')
-    print classify('What is the nickname of Pennsylvania?') #it got this wrong
-    print classify('Who is Desmond Tutu?')
-    print classify('How fast can a Corvette go?')
+    print nltk.classify.accuracy(classifier.classifier, test_set)
+    print classifier.classify('How much money does the Sultan of Brunei have?')
+    print classifier.classify('When did Geraldine Ferraro run for vice president?')
+    print classifier.classify('What is the nickname of Pennsylvania?') #it got this wrong
+    print classifier.classify('Who is Desmond Tutu?')
+    print classifier.classify('How fast can a Corvette go?')
