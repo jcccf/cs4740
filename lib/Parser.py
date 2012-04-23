@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import nltk, glob, re, json, cPickle as pickle, os.path
 from lxml import etree
 from lxml import html
@@ -10,6 +11,7 @@ from lxml import html
 # /parsed_docs_posne
 #     List of { "title": { "pos": List of sentences, "ne": List of nltk NE trees }, "leadpara": { "pos": List of sentences, "ne": List of nltk NE trees },...
 #     * Same indices as /parsed_docs
+#
 
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
@@ -28,14 +30,19 @@ def parse_docs():
       data = f.read()
       xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*[0-9\.]+[\s]*', data) # Split the documents
       assert len(xmldocs) == 51
-      xmldocs.pop(0) # Remove the first element which is blank
       for xmldoc in xmldocs:
-        xmldoc = re.sub(r'<([a-zA-Z]+)[\s]+[a-zA-Z0-9= ]+[\s]*>', r'<\1>', xmldocs[1]) # Fix some broken XML
+        xmldoc = re.sub(r'<([a-zA-Z]+)[\s]+[a-zA-Z0-9= ]+[\s]*>', r'<\1>', xmldoc) # Fix some broken XML
+        if len(xmldoc.strip()) == 0:
+          continue
         tree = etree.XML(xmldoc, parser)
         docno = tree.xpath("//DOCNO")[0].text
         leadpara = tree.xpath("//LEADPARA")[0].text if len(tree.xpath("//LEADPARA")) > 0 else None
         headline = tree.xpath("//HEADLINE")[0].text if len(tree.xpath("//HEADLINE")) > 0 else None
-        text = re.sub(r'\[[^\[\]]*\]', '', tree.xpath("//TEXT")[0].text) # Remove square brackets
+        if len(tree.xpath("//TEXT")) > 0:
+          text = re.sub(r'<[a-zA-Z\/][^>]*>', '', etree.tostring(tree.xpath("//TEXT")[0])) # Remove XML/HTML Tags
+          text = re.sub(r'\[[^\[\]]*\]', '', text) # Remove square brackets
+        else:
+          text = None
         docs.append({ "docno": docno, "leadpara": leadpara, "text": text })
     # Write to a pickle
     with open('data/train/parsed_docs/%s' % os.path.basename(filename), 'wb') as f:
@@ -75,5 +82,5 @@ def generate_pos_ne():
       pickle.dump(pdocs, f)
 
 if __name__ == '__main__':
-  # parse_docs()
+  parse_docs()
   generate_pos_ne()
