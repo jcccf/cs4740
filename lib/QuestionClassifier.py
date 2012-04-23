@@ -44,4 +44,3 @@ if __name__ == '__main__':
     print classify('What is the nickname of Pennsylvania?') #it got this wrong
     print classify('Who is Desmond Tutu?')
     print classify('How fast can a Corvette go?')
-            

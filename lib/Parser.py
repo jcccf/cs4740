@@ -6,7 +6,10 @@
 #     List of { "docno": docno, "title": title, "leadpara": leadpara, "text": text}
 #     * Note that values may be None if the document did not have that particular field
 # /parsed_docs_posne
-#     List of { "title": { "pos": List of sentences, "ne": List of nltk NE trees }, "leadpara": { "pos": List of sentences, "ne": List of nltk NE trees },...
+#     List of { 
+#       "title": 
+#         { "sentences": List of list of words, "pos": List of sentences, "ne": List of nltk NE trees, "parse_tree": Parse Trees of sentences }, 
+#       "leadpara": { "pos": List of sentences, "ne": List of nltk NE trees },...
 #     * Same indices as /parsed_docs
 # /parsed_questions.txt
 #     Dict of Question Number : { 
@@ -21,6 +24,7 @@
 import nltk, glob, re, json, cPickle as pickle, os.path
 from lxml import etree
 from lxml import html
+import Chunker
 
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
@@ -52,7 +56,7 @@ def parse_docs():
           text = re.sub(r'\[[^\[\]]*\]', '', text) # Remove square brackets
         else:
           text = None
-        docs.append({ "docno": docno, "leadpara": leadpara, "text": text })
+        docs.append({ "docno": docno, "leadpara": leadpara, "text": text, "headline": headline })
     # Write to a pickle
     with open('data/train/parsed_docs/%s' % os.path.basename(filename), 'wb') as f:
       pickle.dump(docs, f)
@@ -72,17 +76,20 @@ def generate_pos_ne():
       for doc in docs:
         pdoc = {}
         for k in doc.keys(): # Generate POS tags and NEs for each key in the document
-          if doc[k] is not None:
+          if doc[k] is not None and doc[k] is not "docno":
             # Split into sentences, then words, POS tag words, then chunk tagged words
             sentences = nltk.sent_tokenize(doc[k])
-            allpos, allne = [], []
+            allsent, allpos, allne, allptree = [], [], [], []
             for s in sentences:
               words = nltk.word_tokenize(s)
               postags = nltk.pos_tag(words)
               nes = nltk.ne_chunk(postags)
+              tree = Chunker.chunker.parse(postags)
+              allsent.append(words)
               allpos.append(postags)
               allne.append(nes)
-            pdoc[k] = { "pos": allpos, "ne": allne }
+              allptree.append(tree)
+            pdoc[k] = { "sentences": allsent, "pos": allpos, "ne": allne, "parse_tree": allptree }
           else:
             pdoc[k] = None
         pdocs.append(pdoc)
