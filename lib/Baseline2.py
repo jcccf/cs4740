@@ -13,7 +13,7 @@ def answer_all(answerer):
   for qno, question in questions.iteritems():
       # with open('data/train/parsed_docs/top_docs.%d' % qno, 'rb') as f, open('data/train/parsed_docs_posne/top_docs.%d' % qno, 'rb') as f2:
       #   docs, docs_posne = f.read(), f2.read()
-      with open('data/train/parsed_docs/top_docs.%s' % qno, 'rb') as f:
+      with open('data/train/parsed_docs/top_docs.%d' % qno, 'rb') as f:
         docs = f.read()
       answer = answerer(question, docs, None)
 

@@ -50,7 +50,7 @@ def parse_docs():
         if len(xmldoc.strip()) == 0:
           continue
         tree = etree.XML(xmldoc, parser)
-        docno = tree.xpath("//DOCNO")[0].text
+        docno = tree.xpath("//DOCNO")[0].text.strip()
         leadpara = tree.xpath("//LEADPARA")[0].text if len(tree.xpath("//LEADPARA")) > 0 else None
         headline = tree.xpath("//HEADLINE")[0].text if len(tree.xpath("//HEADLINE")) > 0 else None
         if len(tree.xpath("//TEXT")) > 0:
@@ -133,6 +133,6 @@ def parse_questions():
     pickle.dump(parsed_questions, f)
 
 if __name__ == '__main__':
-  # parse_docs()
+  parse_docs()
   parse_questions()
   # generate_pos_ne()
