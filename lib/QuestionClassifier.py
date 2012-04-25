@@ -4,6 +4,7 @@
 import nltk
 import re
 import os, cPickle as pickle
+from pprint import pprint
 
 keywordlist = ['do','substance','currency','religion','instrument','last','other','code','num','ord','speed','time','weight','body','def','desc','quot','state','abb','dimen','plant','popu','group','title','mount','dise','job','act','prod','art','vessel','food','anim','abb','term','city','comp','country','date','eff','dist','event','lang','loca','money','name','nick','peop','perc','sport','prof','temp','title','univ','vessel','eff','cause','tech','letter','symbol','word','color','big','fast','invent','discover','live','wrote','born']
 
@@ -14,7 +15,7 @@ def liroth_to_wordnet(self, category):
 
 class QuestionClassifier:
     def __init__(self):
-        with open('data/train/qc/keyword2spickle', 'rb') as fpickle:
+        with open('data/train/qc/keywords2pickle', 'rb') as fpickle:
             self.keywordlist2 = pickle.load(fpickle) 
         self.classifier = self.train_classifier()
     
@@ -38,10 +39,12 @@ class QuestionClassifier:
         train_set = []
         with open('data/train/qc/train_5500.label', 'r') as f:
             for line in f:
-                match = re.match('([A-Z]+):[a-z]+ (.+)', line)
-                #match = re.match('([A-Z]+:[a-z]+) (.+)', line)
+                # match = re.match('([A-Z]+):[a-z]+ (.+)', line)
+                match = re.match('([A-Z]+:[a-z]+) (.+)', line)
                 train_set.append((self.question_features(match.groups()[1]),match.groups()[0]))
-        classifier = nltk.NaiveBayesClassifier.train(train_set)
+        # classifier = nltk.NaiveBayesClassifier.train(train_set)
+        # classifier = nltk.DecisionTreeClassifier.train(train_set)
+        classifier = nltk.MaxentClassifier.train(train_set)
         return classifier
   
     def classify(self, question):
@@ -52,9 +55,11 @@ if __name__ == '__main__':
     test_set = []
     with open('data/train/qc/TREC_10.label', 'r') as f2:
         for line in f2:
-            match = re.match('([A-Z]+):[a-z]+ (.+)', line)
-            #match = re.match('([A-Z]+:[a-z]+) (.+)', line)
+            # match = re.match('([A-Z]+):[a-z]+ (.+)', line)
+            match = re.match('([A-Z]+:[a-z]+) (.+)', line)
             test_set.append((classifier.question_features(match.groups()[1]),match.groups()[0]))
+    # pprint(test_set)
+    # exit(0)
     print nltk.classify.accuracy(classifier.classifier, test_set)
     print classifier.classify('How much money does the Sultan of Brunei have?')
     print classifier.classify('When did Geraldine Ferraro run for vice president?')
