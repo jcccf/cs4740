@@ -14,7 +14,7 @@ def liroth_to_wordnet(self, category):
 
 class QuestionClassifier:
     def __init__(self):
-        with open('data/train/qc/keyword2spickle', 'rb') as fpickle:
+        with open('data/train/qc/keywords2pickle', 'rb') as fpickle:
             self.keywordlist2 = pickle.load(fpickle) 
         self.classifier = self.train_classifier()
     
