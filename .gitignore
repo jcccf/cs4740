@@ -3,3 +3,9 @@ old/a1/data/*
 old/a2/data/*
 *DS_Store
 *.pyc
+corenlp/*
+!corenlp/corenlp.py
+!corenlp/client.py
+!corenlp/default.properties
+!corenlp/jsonrpc.py
+!corenlp/progressbar.py

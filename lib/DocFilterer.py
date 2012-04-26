@@ -21,6 +21,17 @@ def naive_filter_sentences(keywords, sentences):
       matches.append((i, count))
   return matches
 
+def naive_filter_sentences_unweighted(keywords, sentences):
+  matches = []
+  keywords = [keyword.lower() for keyword in keywords]
+  for i, sentence in enumerate(sentences):
+    word_hash = { word:True for word in sentence }
+    count = 0
+    for keyword in keywords:
+      if keyword in word_hash: count += 1
+    if count > 0: matches.append((i, count))
+  return matches
+
 # Extract NPs from sentence, removing stopwords and the keywords themselves
 def naive_extract_nps(keywords, sentence_ptree):
   keywords = [keyword.lower() for keyword in keywords]

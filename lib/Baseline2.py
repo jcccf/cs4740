@@ -4,20 +4,17 @@
 #
 
 import nltk, re, cPickle as pickle
-import QuestionParser, DocFilterer
+import QuestionParser, DocFilterer, Loader
 
 # Helper method that calls the answerer method on all questions
 # answerer should have the signature answerer(question_dict, doclist, doc_posne_list)
 def answer_all(answerer):
   with open('data/naive_out.txt', 'w') as fout:
-    with open('data/train/parsed_questions.txt', 'rb') as f:
-      questions = pickle.load(f)
+    questions = Loader.questions()
     for qno, question in questions.iteritems():
       print qno
-      with open('data/train/parsed_docs_posne/top_docs.%d' % qno, 'rb') as f:
-        docs_posne = pickle.load(f)
-      with open('data/train/parsed_docs/top_docs.%d' % qno, 'rb') as f:
-        docs = pickle.load(f)
+      docs_posne = Loader.docs_posne(qno)
+      docs = Loader.docs(qno)
       answer = answerer(question, docs, docs_posne)
       for ans in answer[:5]:
         fout.write("%d %s\n" % (qno, ans))

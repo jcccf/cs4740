@@ -153,6 +153,29 @@ def parse_questions():
   with open('data/train/parsed_questions.txt', 'wb') as f:
     pickle.dump(parsed_questions, f)
 
+# TODO Parse out more answers
+def parse_answers():
+  print "Parsing Answers..."
+  parsed_answers = {}
+  with open('data/train/answers.txt', 'r') as f:
+    data = f.read()
+    answers = data.split("Question")
+    answers.pop(0)
+    for answer in answers:
+      parts = [a.strip() for a in answer.strip().split("\n")]
+      qno = int(parts.pop(0))
+      question = parts.pop(0)
+      doc = [parts.pop(0)]
+      theanswer = [parts.pop(0)]
+      for part in parts:
+        if re.match(r"^[A-Z0-9]+\-[A-Z0-9]+$", part):
+          doc.append(doc)
+        else:
+          theanswer.append(part)
+      parsed_answers[qno] = { "question": question, "docnos": doc, "answers": theanswer }
+  with open('data/train/parsed_answers.txt', 'wb') as f:
+    pickle.dump(parsed_answers, f)
+
 def generate_parse_trees():
   print "Generating Parse Trees using the Stanford Parser..."
   try:
@@ -243,6 +266,7 @@ def generate_parse_trees():
       pickle.dump(pdocs, f)
 
 if __name__ == '__main__':
-  parse_docs()
+  # parse_docs()
   # parse_questions()
-  generate_parse_trees()
+  parse_answers()
+  # generate_parse_trees()
