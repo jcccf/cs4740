@@ -35,16 +35,17 @@ def parse_docs(question_number, NE_types, keywords):
                         entity = entity.replace('/NNP', '').replace('/JJ', '')
                         if entity in keywords:
                             keyword_match_positions.append(word_position)
-                        else:
+                        elif entity_type in NE_types:
                             answer_candidates.append((entity, word_position)) 
                     elif child[0] in keywords: #keyword match
                         keyword_match_positions.append(word_position)
                     word_position += 1
-                if entity_type in NE_types:
-                    if entity in NE_dict:
-                        NE_dict[entity] += len(keyword_match_positions)
+                for (candidate,candidate_pos) in answer_candidates:
+                    if candidate in NE_dict:
+                        NE_dict[candidate] += len(keyword_match_positions)
                     else:
-                        NE_dict[entity] = len(keyword_match_positions)                                                                
+                        NE_dict[candidate] = len(keyword_match_positions)
+                                                                                
             elif at_text == True:
                 text += line
     return NE_dict
@@ -60,13 +61,15 @@ def answer(question_num, question):
     if re.search(r'[wW]ho', question) != None:
         NE_dict = parse_docs(question_num, ["PERSON"], keywords)
     elif re.search('[wW]here', question) != None:
-        NE_dict = parse_docs(question_num, ["GPE"], keywords)
+        NE_dict = parse_docs(question_num, ["GPE","LOCATION"], keywords)
     elif re.search('[wW]hat', question) != None:
-        NE_dict = parse_docs(question_num, ["ORGANIZATION","GPE"], keywords)
+        NE_dict = parse_docs(question_num, ["ORGANIZATION","GPE","FACILITY","GSP","LOCATION"], keywords)
     elif re.search('[wW]when', question) != None:
-        # can't do dates with NE, need to find some other mechanism
-        return None
+        NE_dict = parse_docs(question_num, ["ORGANIZATION","GPE","FACILITY","GSP","LOCATION"], keywords)
+    elif re.search('[hH]ow', question) != None:
+        NE_dict = parse_docs(question_num, ["ORGANIZATION","GPE","FACILITY","GSP","LOCATION"], keywords)
     else: # couldn't classify the question
+        print question
         return None
     NE_list = sorted(NE_dict, key=lambda key: NE_dict[key])
     NE_list.reverse()
