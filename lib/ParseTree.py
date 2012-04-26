@@ -1,5 +1,6 @@
 # The Real Parse Tree
 # As we can observe from this small example, ParseTrees take way too long to train.
+# http://nltk.googlecode.com/svn/trunk/doc/howto/parse.html
 import nltk
 from nltk.corpus import treebank
 
