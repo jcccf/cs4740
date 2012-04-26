@@ -15,6 +15,12 @@
 #       "nouns": list of nouns in the question,
 #       "ne_words": list of NEs, and these are tuples of (NE_TYPE, word)
 #   }
+# /parsed_answers.txt
+#   Dict of Question Number : { 
+#       "question": question text, 
+#       "docnos": list of document ids,
+#       "answers": list of answer strings
+#   }
 # /parsed_docs_trees
 #   List of { "text" : { 
 #       "sentences": List of List of Words,
@@ -169,7 +175,7 @@ def parse_answers():
       theanswer = [parts.pop(0)]
       for part in parts:
         if re.match(r"^[A-Z0-9]+\-[A-Z0-9]+$", part):
-          doc.append(doc)
+          doc.append(part)
         else:
           theanswer.append(part)
       parsed_answers[qno] = { "question": question, "docnos": doc, "answers": theanswer }
