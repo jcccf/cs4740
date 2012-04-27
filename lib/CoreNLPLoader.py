@@ -1,13 +1,13 @@
-import CoreNLPParser, Loader, sys
+import CoreNLPParser, Loader, sys, os, cPickle as pickle
 from unidecode import unidecode
 
-try:
-  os.makedirs('data/train/parsed_docs_core')
-except:
-  pass
-
+# Loads and Caches Documents using CoreNLP
 class CoreNLPLoader():
   def __init__(self, qno):
+    try:
+      os.makedirs('data/train/parsed_docs_core')
+    except:
+      pass
     self.qno = qno
     self.cache()
     
@@ -42,16 +42,29 @@ class CoreNLPLoader():
         pickle.dump(parsed_docs, f)
       self.docs = parsed_docs
     
-  def load_doc(doc_index):
-    special_doc = {}
+  # Load the document at index doc_index,
+  # returning a hash of lists of CoreNLPFeatures objects (corresponding to paragraphs)
+  def load_doc(doc_index, flatten=True):
+    special_doc = { 'docno': self.docs[doc_index]['docno'] }
     for k in ['leadpara', 'headline', 'text']:
       if k in self.docs[doc_index]:
         special_doc[k] = [CoreNLPParser.CoreNLPFeatures(v) for v in self.docs[doc_index][k]]
     return special_doc
+  
+  # Simply load a list of CoreNLPFeatures objects from the document at index doc_index
+  def load_paras(doc_index):
+    special_doc = []
+    for k in ['headline', 'leadpara', 'text']:
+      if k in self.docs[doc_index]:
+        special_doc += [CoreNLPParser.CoreNLPFeatures(v) for v in self.docs[doc_index][k]]
+    return special_doc
 
 if __name__ == '__main__':
+  # See CoreNLPFeatures for more functions to call
   cl = CoreNLPLoader(201)
-  a = cl.load_doc(0)
+  a = cl.load_paras(0)
+  print a[0].sentences()
+  print a[0].coreferences()
   
   # # Run the below!
   # for i in range(300, 400):
