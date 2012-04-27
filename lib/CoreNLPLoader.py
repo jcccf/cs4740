@@ -3,6 +3,29 @@ from unidecode import unidecode
 import jsonrpc
 import argparse
 
+class CoreNLPQuestionLoader():
+  def __init__(self, host="127.0.0.1", port=8080):
+    self.host,self.port = host,port
+    self.cache()
+    
+  def cache(self):
+    try:
+      self.questions = Loader.questions_core()
+    except:
+      print "Parsing Questions..."
+      parser = CoreNLPParser.CoreNLPParser(host=self.host,port=self.port)
+      qs = Loader.questions()
+      parsed_qs = {}
+      for qno, q in qs.iteritems():
+        json = parser.parse(unidecode(q['question']))
+        parsed_qs[qno] = json    
+      with open('data/train/parsed_questions_core.txt', 'wb') as f:
+        pickle.dump(parsed_qs, f)
+        self.questions = parsed_qs
+  
+  def load_question(self, qno):
+    return CoreNLPParser.CoreNLPFeatures(self.questions[qno])
+
 # Loads and Caches Documents using CoreNLP
 class CoreNLPLoader():
   def __init__(self, qno, host="127.0.0.1", port=8080):
@@ -23,6 +46,7 @@ class CoreNLPLoader():
       self.docs = Loader.docs_core(self.qno)
     except:
       # If not, load docs
+      print "Loading Docs for", self.qno
       parser = CoreNLPParser.CoreNLPParser(host=self.host,port=self.port)
       docs = Loader.docs(self.qno)
       parsed_docs = []
@@ -83,24 +107,28 @@ if __name__ == '__main__':
   # a = cl.load_paras(0)
   # print a[2].sentences()
   # print a[2].coreferences()
+
   argparser = argparse.ArgumentParser()
+  argparser.add_argument('-q', default=False, action='store_true', dest="questions", help="parse questions instead of docs")
   argparser.add_argument('-l', type=int, default=201, action='store', dest="lb", help="start parsing from this question number")
   argparser.add_argument('-u', type=int, default=399, action='store', dest="ub", help="stop parsing after this question number")
   argparser.add_argument('--port', type=int, default=8080, action='store', dest="port", help="port of server")
   argparser.add_argument('--host', default="127.0.0.1", action='store', dest="host", help="host name of server")
   args = argparser.parse_args()
   
-  if args.lb <= args.ub:
-    step = 1
-    args.ub += 1
+  if args.questions is True:
+    cl = CoreNLPQuestionLoader()
+    print cl.load_question(201).parse_trees(flatten=True)
   else:
-    step = -1
-    args.ub -= 1
-  
-  # Run the below!
-  for i in range(args.lb, args.ub, step):
-    try:
-      cl = CoreNLPLoader(i,host=args.host, port=args.port)
-    except:
-      continue
+    if args.lb <= args.ub:
+      step = 1
+      args.ub += 1
+    else:
+      step = -1
+      args.ub -= 1
+    for i in range(args.lb, args.ub, step):
+      try:
+        cl = CoreNLPLoader(i,host=args.host, port=args.port)
+      except:
+        continue
       

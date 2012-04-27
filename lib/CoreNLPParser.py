@@ -44,6 +44,14 @@ class CoreNLPFeatures:
       words = [w for w, a in sentence['words']]
       sentences.append(words)
     return sentences
+    
+  # Return a list of list of lemmas
+  def lemmas(self):
+    sentences = []
+    for sentence in self.result['sentences']:
+      lemmas = [a['Lemma'] for w, a in sentence['words']]
+      sentences.append(lemmas)
+    return sentences
   
   # Return a list of list of (word, pos) tuples
   def pos(self):
@@ -113,6 +121,7 @@ if __name__ == '__main__':
   print f.sentences()
   print f.tokenized()
   print f.pos()
+  print f.lemmas()
   print f.named_entities()
   print f.parse_trees(flatten=True)
   print f.coreferences()
