@@ -15,7 +15,7 @@ class CoreNLPLoader():
     for attempt in range(10):
         try:
             self.cache()
-        except jsonrpc.RPCTransportError as e:
+        except:
             print "Attempt %d timed out.."%attempt
             continue
         break
@@ -39,9 +39,13 @@ class CoreNLPLoader():
           for paragraph in doc[k]:
             print ".",
             sys.stdout.flush()
-            json = {}
-            while "sentences" not in json:
+            try:
               json = parser.parse(unidecode(paragraph))
+            except jsonrpc.RPCTransportError as e:
+              print "---"
+              print unidecode(paragraph)
+              print "---"
+              raise Exception()
             jsons.append(json)
           parsed_doc[k] = jsons
         parsed_docs.append(parsed_doc)
