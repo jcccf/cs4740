@@ -10,5 +10,7 @@ CoreNLP
 =======
 1. Download CoreNLP from here and untar to /corenlp (directly, not in its own directory)
 http://nlp.stanford.edu/software/stanford-corenlp-2012-04-09.tgz
+   a. Install the following packages with pip:
+        unidecode, progressbar
 
 2. Start the CoreNLP server with python corenlp.py
