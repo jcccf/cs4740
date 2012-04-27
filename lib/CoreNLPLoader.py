@@ -77,8 +77,8 @@ if __name__ == '__main__':
   argparser = argparse.ArgumentParser()
   argparser.add_argument('-l', type=int, default=201, action='store', dest="lb", help="start parsing from this question number")
   argparser.add_argument('-u', type=int, default=399, action='store', dest="ub", help="stop parsing after this question number")
-  argparser.add_argument('-p', type=int, default=8080, action='store', dest="port", help="port of server")
-  argparser.add_argument('-h', default="127.0.0.1", action='store', dest="host", help="host name of server")
+  argparser.add_argument('--port', type=int, default=8080, action='store', dest="port", help="port of server")
+  argparser.add_argument('--host', default="127.0.0.1", action='store', dest="host", help="host name of server")
   args = argparser.parse_args()
   
   if args.lb <= args.ub:
