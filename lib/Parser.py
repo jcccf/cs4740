@@ -63,9 +63,17 @@ def parse_docs():
     docs = []
     with open(filename, 'r') as f:
       data = f.read()
-      xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*[0-9\.]+[\s]*', data) # Split the documents
-      assert len(xmldocs) == 51
-      for xmldoc in xmldocs:
+      xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*([0-9\.]+)[\s]*', data) # Split the documents
+      # print "xmldocs",len(xmldocs)
+      # print xmldocs[0]
+      # print xmldocs[1]
+      # print xmldocs[2]
+      assert len(xmldocs) == 101
+      xmldocs = [ x.strip() for x in xmldocs if len(x.strip()) > 0 ]
+      xmldocs = zip(xmldocs[0:len(xmldocs):2],xmldocs[1:len(xmldocs):2])
+      for score,xmldoc in xmldocs:
+        # print score,xmldoc
+        # exit(0)
         xmldoc = re.sub(r'<([a-zA-Z]+)[\s]+[a-zA-Z0-9= ]+[\s]*>', r'<\1>', xmldoc) # Fix some broken XML
         if len(xmldoc.strip()) == 0:
           continue
@@ -85,7 +93,7 @@ def parse_docs():
           text = clean_text(etree.tostring(tree.xpath("//TEXT")[0]))
         else:
           text = None
-        docs.append({ "docno": docno, "headline": headline, "leadpara": leadpara, "text": text})
+        docs.append({ "docno": docno, "score": float(score), "headline": headline, "leadpara": leadpara, "text": text})
     # Write to a pickle
     with open('data/train/parsed_docs/%s' % os.path.basename(filename), 'wb') as f:
       pickle.dump(docs, f)
@@ -272,7 +280,7 @@ def generate_parse_trees():
       pickle.dump(pdocs, f)
 
 if __name__ == '__main__':
-  # parse_docs()
+  parse_docs()
   # parse_questions()
-  parse_answers()
+  # parse_answers()
   # generate_parse_trees()
