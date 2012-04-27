@@ -12,13 +12,10 @@ class CoreNLPLoader():
     except:
       pass
     self.qno = qno
-    for attempt in range(10):
-        try:
-            self.cache()
-        except:
-            print "Attempt %d timed out.."%attempt
-            continue
-        break
+    try:
+        self.cache()
+    except:
+        pass
     
   def cache(self):
     # Test for file existence, if so, just load it in
@@ -39,13 +36,21 @@ class CoreNLPLoader():
           for paragraph in doc[k]:
             print ".",
             sys.stdout.flush()
-            try:
-              json = parser.parse(unidecode(paragraph))
-            except jsonrpc.RPCTransportError as e:
-              print "---"
-              print unidecode(paragraph)
-              print "---"
-              raise Exception()
+            # Move the retry here so that we don't have to re-parse
+            # a whole lot of docs
+            for attempt in range(3):
+                try:
+                  json = parser.parse(unidecode(paragraph))
+                  break # for
+                except jsonrpc.RPCTransportError as e:
+                  if attempt+1 == 3:
+                    print
+                    print "---"
+                    print unidecode(paragraph)
+                    print "---"
+                    sys.stdout.flush()
+                    raise Exception()
+                  continue # for
             jsons.append(json)
           parsed_doc[k] = jsons
         parsed_docs.append(parsed_doc)
