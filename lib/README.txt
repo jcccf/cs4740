@@ -11,8 +11,6 @@ CoreNLP
 1. Download CoreNLP from here and untar to /corenlp (directly, not in its own directory).
 I.e. corenlp.py will reside beside a lot of random jar files in the corenlp directory.
 http://nlp.stanford.edu/software/stanford-corenlp-2012-04-09.tgz
-   a. Install the following packages with pip:
-        unidecode, progressbar
 
 2. There might be several dependencies you need to install, including
 "simplejson", "pexpect" and "unidecode".
