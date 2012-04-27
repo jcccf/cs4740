@@ -14,9 +14,13 @@ def docs(qno):
   return pickle.load(open('data/train/parsed_docs/top_docs.%d' % qno, 'rb'))
 
 # Try not to use this - here for legacy purposes
+def docs_core(qno):
+  return pickle.load(open('data/train/parsed_docs_core/top_docs.%d' % qno, 'rb'))
+
+# Try not to use this - here for legacy purposes
 def docs_posne(qno):
   return pickle.load(open('data/train/parsed_docs_posne/top_docs.%d' % qno, 'rb'))
 
-# Use this
+# Try not to use this either
 def docs_tree(qno):
   return pickle.load(open('data/train/parsed_docs_tree/top_docs.%d' % qno, 'rb'))

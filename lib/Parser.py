@@ -42,8 +42,42 @@ def clean_text(text):
   text = " ".join(text.split())
   text = re.sub(r'\[[^\[\]]*\]', '', text) # Remove square brackets
   text = re.sub(r"([\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*;[\s]*|[\s]*;[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*\.[\s]*)", ". ", text)
+  text = split_into_paras(text)
   return text
-
+  
+# Split into paragraphs containing no more than limit=100 words each.
+# If a sentence contains more than 100 words, split it up.
+def split_into_paras(text, limit=100):
+  paragraphs = []
+  sentences = nltk.sent_tokenize(text)
+  paragraph, para_count = [], 0 
+  actual_sentences = []
+  # Generate sentence word counts, splitting long sentences if necessary
+  for sentence in sentences:
+    num_words = len(nltk.word_tokenize(sentence))
+    if num_words > limit:
+      subsentences = re.split(r"(;|--|\/|:)", sentence)
+      for subsentence in subsentences:
+        num_words = len(nltk.word_tokenize(subsentence))
+        if num_words < limit:
+          actual_sentences.append((subsentence, num_words))
+        else:
+          print "Skipped", subsentence
+    else:
+      actual_sentences.append((sentence, num_words))
+  # Combine sentences into paragraphs
+  for sentence, num_words in actual_sentences:
+    if para_count + num_words < 100:
+      paragraph.append(sentence)
+      para_count += num_words
+    else:
+      if len(paragraph) > 0:
+        paragraphs.append(" ".join(paragraph))
+      paragraph, para_count = [sentence], num_words
+  if len(paragraph) > 0:
+    paragraphs.append(" ".join(paragraph))
+  return paragraphs
+  
 def parse_docs():
   print "Parsing Docs"
   try:
@@ -57,7 +91,7 @@ def parse_docs():
     docs = []
     with open(filename, 'r') as f:
       data = f.read()
-      xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*[0-9\.]+[\s]*', data) # Split the documents
+      xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*[0-9\.]+[\s]*', data)
       assert len(xmldocs) == 51
       for xmldoc in xmldocs:
         xmldoc = re.sub(r'<([a-zA-Z]+)[\s]+[a-zA-Z0-9= ]+[\s]*>', r'<\1>', xmldoc) # Fix some broken XML
@@ -176,6 +210,7 @@ def parse_answers():
   with open('data/train/parsed_answers.txt', 'wb') as f:
     pickle.dump(parsed_answers, f)
 
+# Deprecated, use CoreNLP instead
 def generate_parse_trees():
   print "Generating Parse Trees using the Stanford Parser..."
   try:
@@ -266,7 +301,6 @@ def generate_parse_trees():
       pickle.dump(pdocs, f)
 
 if __name__ == '__main__':
-  # parse_docs()
+  parse_docs()
   # parse_questions()
-  parse_answers()
-  # generate_parse_trees()
+  # parse_answers()

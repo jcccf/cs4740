@@ -14,6 +14,7 @@ import sys
 import os
 import time
 import re
+from unidecode import unidecode
 
 import pexpect
 
@@ -24,6 +25,24 @@ from progressbar import *
 def remove_id(word):
     """Removes the numeric suffix from the parsed recognized words: e.g. 'word-2' > 'word' """
     return word.count("-") == 0 and word or word[0:word.rindex("-")]
+
+def parse_bracketed(s):
+  word = None
+  attrs = {}
+  temp = {}
+  # Substitute tags, to replace them later
+  for i, tag in enumerate(re.findall(r"(<[^<>]+>.*<\/[^<>]+>)", s)):
+    temp["^^^%d^^^" % i] = tag
+    s = s.replace(tag, "^^^%d^^^" % i)
+  # Load key-value pairs, substituting as necessary
+  for attr, val in re.findall(r"([^=\s]*)=([^=\s]*)", s):
+    if val in temp:
+      val = temp[val]
+    if attr == 'Text':
+      word = val
+    else:
+      attrs[attr] = val
+  return (word, attrs)
 
 def parse_parser_results(text):
     # print "-----"
@@ -36,7 +55,10 @@ def parse_parser_results(text):
     """
     state = 0
     tmp = {}
+    coref_set = []
     results = { "sentences": [] }
+    text = unidecode(text)
+    print text
     for line in text.split("\n"):
         if line.startswith("Sentence #"):
             state = 1
@@ -54,22 +76,7 @@ def parse_parser_results(text):
             exp = re.compile('\[([^\]]+)\]')
             matches  = exp.findall(line)
             for s in matches:
-                print s
-                # split into attribute-value list 
-                av = re.split("=| ", s) 
-                # make [ignore,ignore,a,b,c,d] into [[a,b],[c,d]]
-                # and save as attr-value dict, convert numbers into ints
-                #tmp['words'].append((av[1], dict(zip(*[av[2:][x::2] for x in (0, 1)]))))
-                # tried to convert digits to ints instead of strings, but
-                # it seems the results of this can't be serialized into JSON?
-                word = av[1]
-                attributes = {}
-                for a,v in zip(*[av[2:][x::2] for x in (0, 1)]):
-                    if v.isdigit():
-                        attributes[a] = int(v)
-                    else:
-                        attributes[a] = v
-                tmp['words'].append((word, attributes))
+                tmp['words'].append(parse_bracketed(s))
             state = 3
             tmp['parsetree'] = []
         elif state == 3:
@@ -89,7 +96,21 @@ def parse_parser_results(text):
                     tmp['tuples'].append(tuple([rel,left,right]))
             elif "Coreference set" in line:
                 state = 5
+                if len(coref_set) > 0:
+                  if results.has_key('coref'):
+                    results['coref'].append(coref_set)
+                  else:
+                    results['coref'] = [coref_set]
+                coref_set = []
         elif state == 5:
+          if "Coreference set" in line:
+            if len(coref_set) > 0:
+              if results.has_key('coref'):
+                results['coref'].append(coref_set)
+              else:
+                results['coref'] = [coref_set]
+            coref_set = []
+          else:
             crexp = re.compile(r"\((\d*),(\d)*,\[(\d*),(\d*)\)\) -> \((\d*),(\d)*,\[(\d*),(\d*)\)\), that is: \"(.*)\" -> \"(.*)\"")
             matches = crexp.findall(line)
             for src_i, src_pos, src_l, src_r, sink_i, sink_pos, sink_l, sink_r, src_word, sink_word in matches:
@@ -99,14 +120,16 @@ def parse_parser_results(text):
                 # this was built for single sentences, and thus ignores
                 # the sentence number.  Should be fixed, but would require
                 # restructuring the entire output.
-                print "COREF MATCH", src_i, sink_i
-                if results.has_key('coref'):
-                    results['coref'].append(((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r)))
-                else:
-                    results['coref'] = [((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r))]
+                print "COREF MATCH", src_i, sink_i                
+                coref_set.append(((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r)))
             print "CR", line
     if len(tmp.keys()) != 0:
         results["sentences"].append(tmp)
+    if len(coref_set) > 0:
+      if results.has_key('coref'):
+        results['coref'].append(coref_set)
+      else:
+        results['coref'] = [coref_set]      
     return results
 
 class StanfordCoreNLP(object):
@@ -190,7 +213,8 @@ class StanfordCoreNLP(object):
         
         # anything longer than 5 seconds requires that you also
         # increase timeout=5 in jsonrpc.py
-        max_expected_time = min(5, 3 + len(text) / 20.0)
+        # max_expected_time = min(5, 3 + len(text) / 20.0)
+        max_expected_time = 60
         if verbose: print "Timeout", max_expected_time
         end_time = time.time() + max_expected_time 
         incoming = ""
