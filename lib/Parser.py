@@ -27,6 +27,7 @@ from lxml import etree
 from lxml import html
 import Chunker
 import QuestionClassifier
+import argparse
 
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
@@ -173,6 +174,14 @@ def parse_answers():
     pickle.dump(parsed_answers, f)
 
 if __name__ == '__main__':
-  parse_docs()
-  # parse_questions()
-  # parse_answers()
+  argparser = argparse.ArgumentParser()
+  argparser.add_argument('-d', action='store_true', dest="docs", help="parse documents")
+  argparser.add_argument('-q', action='store_true', dest="questions", help="parse questions")
+  argparser.add_argument('-a', action='store_true', dest="answers", help="parse answers")
+  args = argparser.parse_args()
+  if args.docs:
+    parse_docs()
+  if args.questions:
+    parse_questions()
+  if args.answers:
+    parse_answers()
