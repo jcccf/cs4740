@@ -86,7 +86,7 @@ if __name__ == '__main__':
     args.ub += 1
   else:
     step = -1
-    args.lb,args.ub = args.ub,(args.lb-1)
+    args.lb,args.ub = (args.ub-1),(args.lb)
   
   # Run the below!
   for i in range(args.lb, args.ub, step):
