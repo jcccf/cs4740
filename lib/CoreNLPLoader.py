@@ -1,5 +1,7 @@
 import CoreNLPParser, Loader, sys, os, cPickle as pickle
 from unidecode import unidecode
+import jsonrpc
+import argparse
 
 # Loads and Caches Documents using CoreNLP
 class CoreNLPLoader():
@@ -10,7 +12,13 @@ class CoreNLPLoader():
     except:
       pass
     self.qno = qno
-    self.cache()
+    for attempt in range(10):
+        try:
+            self.cache()
+        except jsonrpc.RPCTransportError as e:
+            print "Attempt %d timed out.."%attempt
+            continue
+        break
     
   def cache(self):
     # Test for file existence, if so, just load it in
@@ -62,12 +70,28 @@ class CoreNLPLoader():
 
 if __name__ == '__main__':
   # See CoreNLPFeatures for more functions to call
-  cl = CoreNLPLoader(201)
-  a = cl.load_paras(0)
-  print a[2].sentences()
-  print a[2].coreferences()
+  # cl = CoreNLPLoader(201)
+  # a = cl.load_paras(0)
+  # print a[2].sentences()
+  # print a[2].coreferences()
+  argparser = argparse.ArgumentParser()
+  argparser.add_argument('-l', type=int, default=201, action='store', dest="lb", help="start parsing from this question number")
+  argparser.add_argument('-u', type=int, default=399, action='store', dest="ub", help="stop parsing after this question number")
+  argparser.add_argument('--port', type=int, default=8080, action='store', dest="port", help="port of server")
+  argparser.add_argument('--host', default="127.0.0.1", action='store', dest="host", help="host name of server")
+  args = argparser.parse_args()
+  
+  if args.lb <= args.ub:
+    step = 1
+    args.ub += 1
+  else:
+    step = -1
+    args.ub -= 1
   
   # Run the below!
-  for i in range(300, 350):
-      cl = CoreNLPLoader(i,port=8081)
+  for i in range(args.lb, args.ub, step):
+    try:
+      cl = CoreNLPLoader(i,host=args.host, port=args.port)
+    except:
+      continue
       
