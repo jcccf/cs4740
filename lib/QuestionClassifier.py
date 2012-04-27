@@ -69,9 +69,9 @@ def liroth_to_wordnet(category):
     elif category == 'NUM:period': senses = ['time period.n.01','time_unit.n.01']
     elif category == 'NUM:perc': senses = ['percent.n.01']
     elif category == 'NUM:speed': senses = ['speed.n.01','rate.n.02']
-    elif category == 'NUM:temp': senses = ['speed.n.01','rate.n.02']
+    elif category == 'NUM:temp': senses = ['Fahrenheit.a.01','Celsius.n.01']
     elif category == 'NUM:size': senses = ['linear_measure.n.01']
-    elif category == 'NUM:weight': senses = ['Fahrenheit.a.01','Celsius.n.01']
+    elif category == 'NUM:weight': senses = ['mass_unit.n.01']
     else: senses = None
     #can return as list of wn.synset or strings
     #return [wn.synset(s) for s in senses]
