@@ -17,7 +17,7 @@ http://nlp.stanford.edu/software/stanford-corenlp-2012-04-09.tgz
 
 3. Start the CoreNLP server with python corenlp.py (run from /corenlp).
 
-4. Parse some documents using "python Parser.py -d".
+4. Parse some documents using "python Parser.py -d". You only need to do this once, as the parsed documents are saved.
 
 5. To load and parse documents, use CoreNLPLoader in CoreNLPLoader.py.
 
