@@ -3,7 +3,8 @@ from unidecode import unidecode
 
 # Loads and Caches Documents using CoreNLP
 class CoreNLPLoader():
-  def __init__(self, qno):
+  def __init__(self, qno, host="127.0.0.1", port=8080):
+    self.host,self.port = host,port
     try:
       os.makedirs('data/train/parsed_docs_core')
     except:
@@ -17,7 +18,7 @@ class CoreNLPLoader():
       self.docs = Loader.docs_core(self.qno)
     except:
       # If not, load docs
-      parser = CoreNLPParser.CoreNLPParser()
+      parser = CoreNLPParser.CoreNLPParser(host=self.host,port=self.port)
       docs = Loader.docs(self.qno)
       parsed_docs = []
       for doc in docs:
@@ -66,6 +67,7 @@ if __name__ == '__main__':
   print a[2].sentences()
   print a[2].coreferences()
   
-  # # Run the below!
-  # for i in range(300, 400):
-  #     cl = CoreNLPLoader(i)   
+  # Run the below!
+  for i in range(300, 350):
+      cl = CoreNLPLoader(i,port=8081)
+      

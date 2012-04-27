@@ -18,8 +18,8 @@ def flatten_deeptree(tree):
 
 # Class to contact CoreNLP server
 class CoreNLPParser:
-  def __init__(self):
-    self.server = jsonrpc.ServerProxy(jsonrpc.JsonRpc20(), jsonrpc.TransportTcpIp(addr=("127.0.0.1", 8080)))
+  def __init__(self,host="127.0.0.1",port=8080):
+    self.server = jsonrpc.ServerProxy(jsonrpc.JsonRpc20(), jsonrpc.TransportTcpIp(addr=(host, port)))
     
   def parse(self, document_text):
     result = loads(self.server.parse(document_text))
