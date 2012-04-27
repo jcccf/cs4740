@@ -10,7 +10,13 @@ class CoreNLPLoader():
     except:
       pass
     self.qno = qno
-    self.cache()
+    for attempt in range(10):
+        try:
+            self.cache()
+        except jsonrpc.RPCTransportError as e:
+            print "Attempt %d timed out.."%attempt
+            continue
+        break
     
   def cache(self):
     # Test for file existence, if so, just load it in
