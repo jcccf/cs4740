@@ -36,6 +36,8 @@ def clean_text(text):
   text = re.sub(r'<[a-zA-Z\/][^>]*>', '', text) # Remove XML/HTML Tags
   text = " ".join(text.split())
   text = re.sub(r'\[[^\[\]]*\]', '', text) # Remove square brackets
+  text = re.sub(r"[\-]{2,}", "-", text) # Turn multiple dashes into single dash
+  text = text.replace("\\", "").replace("`", "\'")
   text = re.sub(r"([\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*;[\s]*|[\s]*;[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*\.[\s]*)", ". ", text)
   text = split_into_paras(text)
   return text
