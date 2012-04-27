@@ -39,7 +39,12 @@ def clean_text(text):
   text = re.sub(r"([\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*;[\s]*|[\s]*;[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*\.[\s]*)", ". ", text)
   text = split_into_paras(text)
   return text
-  
+
+def clean_para(text):
+  text = re.sub(r'("(?=\S)[^"]*(?<=\S)")|"', lambda m: m.group(1) or '', text) # Clean unbalanced "
+  text = re.sub(r'(\((?=\S)[^\(\)]*(?<=\S)\))|\(|\)', lambda m: m.group(1) or '', text) # Clean unbalanced ()
+  return text
+
 # Split into paragraphs containing no more than limit=100 words each.
 # If a sentence contains more than 100 words, split it up.
 def split_into_paras(text, limit=100):
@@ -71,6 +76,7 @@ def split_into_paras(text, limit=100):
       paragraph, para_count = [sentence], num_words
   if len(paragraph) > 0:
     paragraphs.append(" ".join(paragraph))
+  paragraphs = [clean_para(p) for p in paragraphs]
   return paragraphs
   
 def parse_docs():
