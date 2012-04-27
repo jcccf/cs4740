@@ -27,10 +27,13 @@ def remove_id(word):
     return word.count("-") == 0 and word or word[0:word.rindex("-")]
 
 def parse_bracketed(s):
+  '''Parse word features [abc=... def = ...]
+  Also manages to parse out features that have XML within them
+  '''
   word = None
   attrs = {}
   temp = {}
-  # Substitute tags, to replace them later
+  # Substitute XML tags, to replace them later
   for i, tag in enumerate(re.findall(r"(<[^<>]+>.*<\/[^<>]+>)", s)):
     temp["^^^%d^^^" % i] = tag
     s = s.replace(tag, "^^^%d^^^" % i)
@@ -57,7 +60,7 @@ def parse_parser_results(text):
     tmp = {}
     coref_set = []
     results = { "sentences": [] }
-    text = unidecode(text)
+    text = unidecode(text) # Force output conversion to ASCII to avoid RPC error
     print text
     for line in text.split("\n"):
         if line.startswith("Sentence #"):
@@ -96,14 +99,9 @@ def parse_parser_results(text):
                     tmp['tuples'].append(tuple([rel,left,right]))
             elif "Coreference set" in line:
                 state = 5
-                if len(coref_set) > 0:
-                  if results.has_key('coref'):
-                    results['coref'].append(coref_set)
-                  else:
-                    results['coref'] = [coref_set]
                 coref_set = []
         elif state == 5:
-          if "Coreference set" in line:
+          if "Coreference set" in line: # Create new coreference set if needed
             if len(coref_set) > 0:
               if results.has_key('coref'):
                 results['coref'].append(coref_set)
@@ -111,21 +109,18 @@ def parse_parser_results(text):
                 results['coref'] = [coref_set]
             coref_set = []
           else:
+            # Updated for new coreference format
             crexp = re.compile(r"\((\d*),(\d)*,\[(\d*),(\d*)\)\) -> \((\d*),(\d)*,\[(\d*),(\d*)\)\), that is: \"(.*)\" -> \"(.*)\"")
             matches = crexp.findall(line)
             for src_i, src_pos, src_l, src_r, sink_i, sink_pos, sink_l, sink_r, src_word, sink_word in matches:
                 src_i, src_pos, src_l, src_r = int(src_i)-1, int(src_pos)-1, int(src_l)-1, int(src_r)-1
                 sink_i, sink_pos, sink_l, sink_r = int(sink_i)-1, int(sink_pos)-1, int(sink_l)-1, int(sink_r)-1
-                # TODO: src_i and sink_i correspond to the sentences.
-                # this was built for single sentences, and thus ignores
-                # the sentence number.  Should be fixed, but would require
-                # restructuring the entire output.
                 print "COREF MATCH", src_i, sink_i                
                 coref_set.append(((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r)))
             print "CR", line
     if len(tmp.keys()) != 0:
         results["sentences"].append(tmp)
-    if len(coref_set) > 0:
+    if len(coref_set) > 0: # Add final coreference set if needed
       if results.has_key('coref'):
         results['coref'].append(coref_set)
       else:

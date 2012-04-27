@@ -9,6 +9,7 @@ except:
 class CoreNLPLoader():
   def __init__(self, qno):
     self.qno = qno
+    self.cache()
     
   def cache(self):
     # Test for file existence, if so, just load it in
@@ -24,6 +25,7 @@ class CoreNLPLoader():
         sys.stdout.flush()
         parsed_doc = { 'docno': doc['docno'] }
         for k in ['leadpara', 'headline', 'text']:
+          if doc[k] is None: continue
           jsons = []
           for paragraph in doc[k]:
             print ".",
@@ -40,9 +42,17 @@ class CoreNLPLoader():
         pickle.dump(parsed_docs, f)
       self.docs = parsed_docs
     
-  def load_doc(docindex):
-    pass
+  def load_doc(doc_index):
+    special_doc = {}
+    for k in ['leadpara', 'headline', 'text']:
+      if k in self.docs[doc_index]:
+        special_doc[k] = [CoreNLPParser.CoreNLPFeatures(v) for v in self.docs[doc_index][k]]
+    return special_doc
 
 if __name__ == '__main__':
   cl = CoreNLPLoader(201)
-  cl.cache()
+  a = cl.load_doc(0)
+  
+  # # Run the below!
+  # for i in range(300, 400):
+  #     cl = CoreNLPLoader(i)   
