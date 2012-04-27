@@ -97,23 +97,13 @@ def parse_docs():
     docs = []
     with open(filename, 'r') as f:
       data = f.read()
-<<<<<<< HEAD
-      xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*[0-9\.]+[\s]*', data)
-      assert len(xmldocs) == 51
-      for xmldoc in xmldocs:
-=======
-      xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*([0-9\.]+)[\s]*', data) # Split the documents
-      # print "xmldocs",len(xmldocs)
-      # print xmldocs[0]
-      # print xmldocs[1]
-      # print xmldocs[2]
+      xmldocs = re.split('[\s]*Qid:[\s]*[0-9]+[\s]*Rank:[\s]*[0-9]+[\s]*Score:[\s]*([0-9\.]+)[\s]*', data)
       assert len(xmldocs) == 101
       xmldocs = [ x.strip() for x in xmldocs if len(x.strip()) > 0 ]
       xmldocs = zip(xmldocs[0:len(xmldocs):2],xmldocs[1:len(xmldocs):2])
       for score,xmldoc in xmldocs:
         # print score,xmldoc
         # exit(0)
->>>>>>> 51011e4f2a89563c0fd70195c39fe3f4c87c6d8b
         xmldoc = re.sub(r'<([a-zA-Z]+)[\s]+[a-zA-Z0-9= ]+[\s]*>', r'<\1>', xmldoc) # Fix some broken XML
         if len(xmldoc.strip()) == 0:
           continue
@@ -323,9 +313,4 @@ def generate_parse_trees():
 if __name__ == '__main__':
   parse_docs()
   # parse_questions()
-<<<<<<< HEAD
   # parse_answers()
-=======
-  # parse_answers()
-  # generate_parse_trees()
->>>>>>> 51011e4f2a89563c0fd70195c39fe3f4c87c6d8b
