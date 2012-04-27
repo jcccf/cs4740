@@ -9,35 +9,79 @@ from naivebayes import NaiveBayesClassifier
 from scikit_classifier import scikit_classifier
 from collections import defaultdict
 from keywords_pickle_builder import load_keywords
+from nltk.corpus import wordnet as wn
 
 keywordlist = ['do','substance','currency','religion','instrument','last','other','code','num','ord','speed','time','weight','body','def','desc','quot','state','abb','dimen','plant','popu','group','title','mount','dise','job','act','prod','art','vessel','food','anim','abb','term','city','comp','country','date','eff','dist','event','lang','loca','money','name','nick','peop','perc','sport','prof','temp','title','univ','vessel','eff','cause','tech','letter','symbol','word','color','big','fast','invent','discover','live','wrote','born']
 
 #converts question categories in Li Roth Taxonomy to wordnet
-def liroth_to_wordnet(self, category):
-    pass
-    #to do  
+def liroth_to_wordnet(category):
+    # Abbreviation questions would need to be handled differently
+    # since wordnet doesn't treat abbreviations differently
+    if category == 'ABBR:abb': senses = None
+    elif category == 'ABBR:exp': senses =  None
+    elif category == 'ENTY:animal': senses = ['animal.n.01']
+    elif category == 'ENTY:body': senses = ['body_part.n.01']
+    elif category == 'ENTY:color': senses = ['color.n.01','color.n.08']
+    elif category == 'ENTY:cremat': senses = ['show.n.03','creation.n.02','writing.n.02','publication.n.01','music.n.01']
+    elif category == 'ENTY:currency': senses = ['currency.n.01']
+    elif category == 'ENTY:dismed': senses = ['illness.n.01','disorder.n.01','medicine.n.02','drug.n.01']
+    # probably won't work well for events since they are usually names like "World War II"
+    elif category == 'ENTY:event': senses = ['event.n.01','event.n.02','event.n.03','holiday.n.02']
+    elif category == 'ENTY:food': senses = ['food.n.01','food.n.02']
+    elif category == 'ENTY:instru': senses = ['instrument.n.06']
+    elif category == 'ENTY:lang': senses = ['language.n.01']
+    elif category == 'ENTY:letter': senses = ['letter.n.02']
+    #ENTY:other can be pretty much everything
+    elif category == 'ENTY:other': senses = None
+    elif category == 'ENTY:plant': senses = ['plant.n.02']
+    elif category == 'ENTY:product': senses = ['product.n.01','product.n.02','artifact.n.01']
+    elif category == 'ENTY:religion': senses = ['religion.n.01','religion.n.02']
+    elif category == 'ENTY:sport': senses = ['sport.n.01','sport.n.02']
+    elif category == 'ENTY:substance': senses = ['element.n.02','substance.n.01']
+    elif category == 'ENTY:symbol': senses = ['symbol.n.01','sign.n.01','sign.n.02']
+    elif category == 'ENTY:techmeth': senses = ['technique.n.01','method.n.01']
+    # ENTY:termeq can be anything, occurs in "what is the term for"
+    elif category == 'ENTY:termeq': senses = ['term.n.01'] # the actual term won't have this sense, but the word 'term' might occur near it
+    elif category == 'ENTY:veh': senses = ['vehicle.n.01']
+    # ENTY:word can be anything, occurs in questions like "What English word has the most letters ?"
+    elif category == 'ENTY:word': senses = None
+    # Description questions can't be mapped to a word sense since they don't ask for a specific entity
+    elif category == 'DESC:def': senses = None
+    elif category == 'DESC:desc': senses = None
+    elif category == 'DESC:manner': senses = None
+    elif category == 'DESC:reason': senses = None
+    elif category == 'HUM:gr': senses = ['organization.n.01','group.n.01']
+    elif category == 'HUM:ind': senses = ['person.n.01']
+    elif category == 'HUM:title': senses = ['person.n.01'] #both names and titles have person as their hypernym
+    elif category == 'HUM:desc': senses = ['person.n.01']
+    elif category == 'LOC:city': senses = ['city.n.01']
+    elif category == 'LOC:country': senses = ['country.n.01']
+    elif category == 'LOC:mount': senses = ['mountain.n.01']
+    elif category == 'LOC:other': senses = ['location.n.01']
+    elif category == 'LOC:state': senses = ['state.n.02']
+    # senses won't correspond to the numeric answer, but to words near it
+    elif category == 'NUM:code': senses = ['phone_number.n.01','code.n.02']
+    elif category == 'NUM:count': senses = None # could be anything
+    elif category == 'NUM:date': senses = ['time period.n.01','date.n.01','date.n.02']
+    elif category == 'NUM:money': senses = ['monetary_unit.n.01']
+    elif category == 'NUM:ord': senses = ['chapter.n.01','rank.n.02']
+    elif category == 'NUM:other': senses = ['number.n.02']
+    elif category == 'NUM:period': senses = ['time period.n.01','time_unit.n.01']
+    elif category == 'NUM:perc': senses = ['percent.n.01']
+    elif category == 'NUM:speed': senses = ['speed.n.01','rate.n.02']
+    elif category == 'NUM:temp': senses = ['speed.n.01','rate.n.02']
+    elif category == 'NUM:size': senses = ['linear_measure.n.01']
+    elif category == 'NUM:weight': senses = ['Fahrenheit.a.01','Celsius.n.01']
+    else: senses = None
+    #can return as list of wn.synset or strings
+    #return [wn.synset(s) for s in senses]
+    return senses
+
 class QuestionClassifier:
     def __init__(self, fine_grain=True):
         self.keywordlist2 = load_keywords()
         train_set = self.load_labelled_data('data/train/qc/train_5500.label', fine_grain=fine_grain)
         self.train_classifier(train_set, fine_grain=fine_grain)
-    
-    # This is not the right way to define the features...
-    # def question_features(self, question):
-        # features = {}
-        # words = nltk.word_tokenize(question)
-        # features['words'] = ' '.join(words[0:2])
-        # keywords_occured = []
-        # for keyword in keywordlist:
-            # if len(re.findall(' '+keyword, question)) > 0:
-                # keywords_occured.append(keyword)
-        # features['keywords'] = ' '.join(keywords_occured)
-        # keywords_occured2 = []
-        # for word in words:
-            # if word in self.keywordlist2:
-                # keywords_occured2.append(self.keywordlist2[word])
-        # features['keywords2'] = ' '.join(keywords_occured2)
-        # return features
         
     def question_features(self, question):
         features = defaultdict(int)
