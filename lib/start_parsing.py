@@ -8,7 +8,7 @@ servers = []
 clients = []
 nprocs = 1
 base_port = 8080
-lb,ub = 243,244
+lb,ub = 201,400
 bounds = range(lb,ub,int(ceil( float(ub-lb)/nprocs ))) + [ub]
 print bounds
 assert len(bounds) == nprocs+1
