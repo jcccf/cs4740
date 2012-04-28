@@ -25,6 +25,42 @@ class DocFeatures:
     indices = self.filter_by_answer_type(question_features, indices)
     return indices
     
+  # TODO can match more exactly (ex. match only "The Golden Gate Bridge" vs "Directors of the Golden Gate Bridge District")
+  def filter_by_ne_corefs(self, question_features, doc_limit=20):
+    nes = question_features['nes']
+    global_matches = []
+    # Loop through each document
+    for doc_idx in range(0, min(doc_limit,len(self.docs.docs))):
+      paragraphs = self.docs.load_paras(doc_idx)
+      for para_idx, paragraph in enumerate(paragraphs):
+        # Match clusters in this Paragraph
+        clus_matches, sentence_indices = [], []
+        clusters = paragraph.coreferences()
+        if clusters is not None:
+          for clus_idx, cluster in enumerate(clusters):
+            for cluster_pair in cluster:
+              for stringy, sentence_index, x, y, z in cluster_pair:
+                # Match this cluster if for any string in this cluster,
+                # that all words in any NE are present
+                ne_match = True
+                for ne_words, _ in nes:
+                  for ne_word in ne_words:
+                    if ne_word not in stringy:
+                      ne_match = False
+                if ne_match is True:
+                  clus_matches.append(clus_idx)
+          clus_matches = set(clus_matches)
+          # Add sentence indices for each matched cluster
+          for clus_idx in clus_matches:
+            cluster = clusters[clus_idx]
+            for cluster_pair in cluster:
+              for _, sentence_index, x, y, z in cluster_pair:
+                sentence_indices.append(sentence_index)
+          sentence_indices = set(sentence_indices)
+          for sentence_index in sentence_indices:
+            global_matches.append((doc_idx, para_idx, sentence_index))
+    return global_matches
+    
   def filter_by_keyword_count(self, question_features, doc_limit=20):
     # TODO
     # Maybe, match keywords to NEs and Doc Corefs
