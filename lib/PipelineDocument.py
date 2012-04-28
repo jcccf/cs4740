@@ -30,7 +30,7 @@ class DocFeatures:
   @staticmethod
   def union_sort(i1, i2):
     i = list(i1)
-    i1hash = { (x,y,z):True for c,x,y,z in i1 }
+    i1hash = dict( [ ((x,y,z),True) for c,x,y,z in i1 ] )
     for c,x,y,z in i2: # Add stuff from i2 if it doesn't appear in i1
       if (x,y,z) not in i1hash:
         i.append((c,x,y,z))
