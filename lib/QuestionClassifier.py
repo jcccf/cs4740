@@ -77,6 +77,33 @@ def liroth_to_wordnet(category):
     #return [wn.synset(s) for s in senses]
     return senses
 
+def liroth_to_corenlp(category):
+    if category == 'ENTY:currency': senses = 'MONEY'
+    elif category == 'HUM:gr': senses = 'ORGANIZATION'
+    elif category == 'HUM:ind': senses = 'PERSON'
+    # however, in corenlp 'PERSON' is only for names, titles are ignored by corenlp
+    elif category == 'HUM:title': senses = 'PERSON'
+    elif category == 'HUM:desc': senses = 'PERSON'
+    elif category == 'LOC:city': senses = 'LOCATION'
+    elif category == 'LOC:country': senses = 'LOCATION'
+    elif category == 'LOC:mount': senses = 'LOCATION'
+    elif category == 'LOC:other': senses = 'LOCATION'
+    elif category == 'LOC:state': senses = 'LOCATION'
+    elif category == 'NUM:code': senses = 'NUMBER'
+    elif category == 'NUM:count': senses = 'NUMBER'
+    elif category == 'NUM:date': senses = 'DATE'
+    elif category == 'NUM:money': senses = 'MONEY'
+    elif category == 'NUM:ord': senses = 'NUMBER'
+    elif category == 'NUM:other': senses = 'NUMBER'
+    elif category == 'NUM:period': senses = 'DURATION'
+    elif category == 'NUM:perc': senses = 'PERCENT'
+    elif category == 'NUM:speed': senses = 'NUMBER'
+    elif category == 'NUM:temp': senses = 'NUMBER'
+    elif category == 'NUM:size': senses = 'NUMBER'
+    elif category == 'NUM:weight': senses = 'NUMBER'
+    else: senses = None
+    return senses
+
 class QuestionClassifier:
     def __init__(self, fine_grain=True):
         self.keywordlist2 = load_keywords()
