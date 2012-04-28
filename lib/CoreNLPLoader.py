@@ -75,6 +75,14 @@ class CoreNLPLoader():
                     sys.stdout.flush()
                     raise Exception()
                   continue # for
+		except Exception as e:
+                  if attempt+1 == 3:
+                    print
+                    print "---"
+                    print e
+                    print "---"
+                    raise e
+                  continue # for
             jsons.append(json)
           parsed_doc[k] = jsons
         parsed_docs.append(parsed_doc)

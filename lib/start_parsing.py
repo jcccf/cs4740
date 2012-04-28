@@ -6,9 +6,9 @@ import argparse
 
 servers = []
 clients = []
-nprocs = 8
+nprocs = 1
 base_port = 8080
-lb,ub = 201,400
+lb,ub = 243,244
 bounds = range(lb,ub,int(ceil( float(ub-lb)/nprocs ))) + [ub]
 print bounds
 assert len(bounds) == nprocs+1
@@ -40,7 +40,7 @@ if __name__ == "__main__":
             for i in range(nprocs):
                 clients.append( Popen(
                     "python CoreNLPLoader.py --port %d -l %d -u %d > %s"%(
-                        base_port+i, bounds[i], bounds[i+1], "out_%d.txt"%i),
+                        base_port+i, bounds[i], bounds[i+1]-1, "out_%d.txt"%i),
                         shell=True) )
         
         # wait for every client to be done
