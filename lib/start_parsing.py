@@ -46,6 +46,10 @@ if __name__ == "__main__":
         # wait for every client to be done
         for c in clients:
             c.wait()
+            
+        # wait for every server to be done
+        for s in servers:
+            s.wait()
         
         # kill everything
         for s in servers:
