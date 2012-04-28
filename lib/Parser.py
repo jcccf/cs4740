@@ -47,6 +47,7 @@ def clean_text(text):
 
 def clean_para(text):
   text = re.sub(r'("(?=\S)[^"]*(?<=\S)")|"', lambda m: m.group(1) or '', text) # Clean unbalanced "
+  text = re.sub(r'(\'(?=\S)[^\']*(?<=\S)\')|\'', lambda m: m.group(1) or '', text)
   text = re.sub(r'(\((?=\S)[^\(\)]*(?<=\S)\))|\(|\)', lambda m: m.group(1) or '', text) # Clean unbalanced ()
   text = re.sub(r'(\[(?=\S)[^\[\]]*(?<=\S)\])|\[|\]', lambda m: m.group(1) or '', text) # Clean unbalanced []
   return text
