@@ -60,7 +60,7 @@ class DocFeatures:
       for words,ne_type in nes_in_sentence:
         if ne_type == answer_type or answer_type == None:
           global_matches.append( words )
-    global_matches = list(itertools.chain.from_iterable(global_matches))
+    global_matches = [tuple(x) for x in global_matches]
     set_matches = set(global_matches)
     filtered_matches = []
     for w in global_matches:

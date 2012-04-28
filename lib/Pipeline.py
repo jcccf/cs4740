@@ -20,14 +20,27 @@ class Answerer:
     answers = answers[0: n_chunks*chunksize]
     n = 0
     chunks = []
-    while len(answers) > 0:
-      head = " ".join(answers[0:chunksize])
-      answers = answers[chunksize:]
-      chunks.append( head )
-      n += 1
-    while n < n_chunks:
-      chunks.append( "nil" )
-      n += 1
+    for i in range(n_chunks):
+      chunk = []
+      answers_copy = list(answers)
+      for ans in answers_copy:
+        if len(ans) + len(chunk) <= chunksize:
+          chunk.extend( list(ans) )
+          answers.remove(ans)
+          if len(chunk) == chunksize:
+            break
+      if len(chunk) == 0:
+        chunk.append("nil")
+      chunks.append( " ".join(chunk) )
+      
+    # while len(answers) > 0:
+      # head = " ".join(answers[0:chunksize])
+      # answers = answers[chunksize:]
+      # chunks.append( head )
+      # n += 1
+    # while n < n_chunks:
+      # chunks.append( "nil" )
+      # n += 1
     return chunks
     
 if __name__ == '__main__':
