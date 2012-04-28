@@ -49,7 +49,7 @@ if __name__ == '__main__':
     qf = QuestionFeatures()
     a = Answerer(qf, qno)
     answers = a.answer()
-    chunks = a.chunk(answers, n_chunks=5)
+    chunks = a.chunk(answers, n_chunks=100)
     print "\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )
     # print 
   

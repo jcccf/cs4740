@@ -22,20 +22,29 @@ class DocFeatures:
       # raise NotImplementedException()
     indices1 = self.filter_by_keyword_count(question_features, doc_limit)
     indices2 = self.filter_by_ne_corefs(question_features, doc_limit)
-    indices = DocFeatures.union_indices(indices1, indices2)
+    indices = DocFeatures.union_sort(indices1, indices2)
     # pprint(indices)
     indices = self.filter_by_answer_type(question_features, indices)
     return indices
   
   @staticmethod
-  def union_indices(i1, i2):
-    i1, i2 = set(i1), set(i2)
-    i = list(i1 | i2)
-    return sorted(i)
+  def union_sort(i1, i2):
+    i = list(i1)
+    i1hash = { (x,y,z):True for c,x,y,z in i1 }
+    for c,x,y,z in i2: # Add stuff from i2 if it doesn't appear in i1
+      if (x,y,z) not in i1hash:
+        i.append((c,x,y,z))
+    i = sorted(i, key = lambda x: -x[0]) # sort by count descending
+    i = [ (x,y,z) for w,x,y,z in i ] # get rid of counts
+    return i
   
   # TODO can match more exactly (ex. match only "The Golden Gate Bridge" vs "Directors of the Golden Gate Bridge District")
+  # Filters by matching NEs in question to words in coreference clusters in paragraphs,
+  # returning all sentences belonging to each matched cluster
+  # also returns keyword counts for each sentence 
   def filter_by_ne_corefs(self, question_features, doc_limit=20):
     nes = question_features['nes']
+    keywords = question_features["keywords"]
     global_matches = []
     # Loop through each document
     for doc_idx in range(0, min(doc_limit,len(self.docs.docs))):
@@ -44,6 +53,7 @@ class DocFeatures:
         # Match clusters in this Paragraph
         clus_matches, sentence_indices = [], []
         clusters = paragraph.coreferences()
+        sentences = paragraph.tokenized()
         if clusters is not None:
           for clus_idx, cluster in enumerate(clusters):
             for cluster_pair in cluster:
@@ -66,12 +76,14 @@ class DocFeatures:
                 sentence_indices.append(sentence_index)
           sentence_indices = set(sentence_indices)
           for sentence_index in sentence_indices:
-            global_matches.append((doc_idx, para_idx, sentence_index))
+            # Get keyword count, add 1 to bias slightly
+            count = DocFeatures.naive_filter_sentences(keywords, [sentences[sentence_index]], filter_zero=False)[0][1] + 1
+            global_matches.append((count, doc_idx, para_idx, sentence_index))
     return global_matches
-    
+  
+  # Returns sentences that contain keywords from the question, ordered by
+  # the number of times keywords appear in a question
   def filter_by_keyword_count(self, question_features, doc_limit=20):
-    # TODO
-    # Maybe, match keywords to NEs and Doc Corefs
     keywords = question_features["keywords"]
     global_matches = []
     
@@ -88,7 +100,6 @@ class DocFeatures:
     
     # sort the matches by counts
     global_matches = sorted( global_matches, key=lambda x: -x[0] )
-    global_matches = [ (doc_idx,paragraph_idx,sent_idx) for (count,doc_idx,paragraph_idx,sent_idx) in global_matches ]
     return global_matches
   
   def filter_by_answer_type(self, question_features, indices):
@@ -116,7 +127,7 @@ class DocFeatures:
   # Naive sentence filtering - looks for keywords in a sentence,
   # and returns a list of (index, # of keywords present) tuples
   @staticmethod
-  def naive_filter_sentences(keywords, sentences):
+  def naive_filter_sentences(keywords, sentences, filter_zero=True):
     matches = []
     keywords = [keyword.lower() for keyword in keywords]
     for i, sentence in enumerate(sentences):
@@ -129,7 +140,7 @@ class DocFeatures:
       for keyword in keywords:
         if keyword in word_hash:
           count += word_hash[keyword]
-      if count > 0:
+      if count > 0 or filter_zero is False:
         matches.append((i, count))
     return matches
     
