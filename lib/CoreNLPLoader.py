@@ -75,7 +75,7 @@ class CoreNLPLoader():
                     sys.stdout.flush()
                     raise Exception()
                   continue # for
-		except Exception as e:
+                except Exception as e:
                   if attempt+1 == 3:
                     print
                     print "---"

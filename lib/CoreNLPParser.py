@@ -62,6 +62,7 @@ class CoreNLPFeatures:
     return pos_lines
     
   # Return a list of list of (List of words making up NE, NE type) tuples
+  # Sentence -> Named Entity -> (Words in Named Entity, and type of the Named Entity)
   def named_entities(self):
     ne_list = []
     for sentence in self.result['sentences']:
@@ -94,9 +95,10 @@ class CoreNLPFeatures:
       trees.append(ptree)
     return trees
     
-  # Return a list of list of tuples of (word(s), sentence_index, main_word_index, start_entity_index, end_entity_index+1)
+  # Return a list of list of tuples of (word(s), sentence_index, main_word_index?, start_entity_index, end_entity_index+1)
   # Each list is a coreference cluster
   # Else None if no coreferences
+  # Coref Clusters -> Coref -> ( words:str, sent_idx in the same paragraph, main word idx?, start and end idx of entire coref words )
   def coreferences(self):
     if 'coref' in self.result:
       return self.result['coref']

@@ -16,3 +16,7 @@ class QuestionFeatures:
     nes = q_core.named_entities()[0]
     classification = self.qs[qno]['question_classification']
     return { "keywords": keywords, "nes": nes, "classification": classification }
+
+  def __str__(self):
+    return str(self.features())
+    
