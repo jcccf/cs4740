@@ -20,11 +20,19 @@ class DocFeatures:
       # return self.filter_by_keyword_count(question_features, doc_limit)
     # else:
       # raise NotImplementedException()
-    indices = self.filter_by_keyword_count(question_features, doc_limit)
+    indices1 = self.filter_by_keyword_count(question_features, doc_limit)
+    indices2 = self.filter_by_ne_corefs(question_features, doc_limit)
+    indices = DocFeatures.union_indices(indices1, indices2)
     # pprint(indices)
     indices = self.filter_by_answer_type(question_features, indices)
     return indices
-    
+  
+  @staticmethod
+  def union_indices(i1, i2):
+    i1, i2 = set(i1), set(i2)
+    i = list(i1 | i2)
+    return sorted(i)
+  
   # TODO can match more exactly (ex. match only "The Golden Gate Bridge" vs "Directors of the Golden Gate Bridge District")
   def filter_by_ne_corefs(self, question_features, doc_limit=20):
     nes = question_features['nes']
