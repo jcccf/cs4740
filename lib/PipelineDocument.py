@@ -1,7 +1,6 @@
 import nltk, Loader, itertools
 from PipelineHelpers import *
 from CoreNLPLoader import *
-from collections import defaultdict
 from QuestionClassifier import liroth_to_corenlp,liroth_to_wordnet
 from pprint import pprint
 from nltk.corpus import wordnet as wn
@@ -21,23 +20,47 @@ class DocFeatures:
       # return self.filter_by_keyword_count(question_features, doc_limit)
     # else:
       # raise NotImplementedException()
+    
+    # Get sentence indices, filtering by both keywords and NEs + corefs
     indices1 = self.filter_by_keyword_count(question_features, doc_limit)
     indices2 = self.filter_by_ne_corefs(question_features, doc_limit)
     indices = DocFeatures.union_sort(indices1, indices2)
     # pprint(indices)
-    indices = self.filter_by_answer_type(question_features, indices)
-    #indices = self.filter_by_wordnet(question_features, indices)
-    return indices
+    
+    # Attempt to find answer types using NEs and WordNet
+    # Order NE answer types before WordNet results
+    words = self.filter_by_answer_type(question_features, indices)
+    # words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
+    # words = DocFeatures.union_order(words, words2)
+    # pprint(words)
+    
+    # Pad results with NPs from sentences
+    words.extend(self.filter_by_nps(question_features, indices))
+
+    return words
   
+  # Union the lists i1 and i2, sorting by the first index of each list element, descending
   @staticmethod
   def union_sort(i1, i2):
     i = list(i1)
     i1hash = dict( [ ((x,y,z),True) for c,x,y,z in i1 ] )
     for c,x,y,z in i2: # Add stuff from i2 if it doesn't appear in i1
       if (x,y,z) not in i1hash:
+        i1hash[(x,y,z)] = True
         i.append((c,x,y,z))
     i = sorted(i, key = lambda x: -x[0]) # sort by count descending
     i = [ (x,y,z) for w,x,y,z in i ] # get rid of counts
+    return i
+  
+  # Union the lists i1 and i2, ensuring that all elements in i1 come before those in i2
+  @staticmethod
+  def union_order(i1, i2):
+    i = list(i1)
+    ihash = dict([(x,True) for x in i1])
+    for y in i2:
+      if y not in ihash:
+        ihash[y] = True
+        i.append(y)
     return i
   
   # TODO can match more exactly (ex. match only "The Golden Gate Bridge" vs "Directors of the Golden Gate Bridge District")
@@ -79,7 +102,7 @@ class DocFeatures:
           sentence_indices = set(sentence_indices)
           for sentence_index in sentence_indices:
             # Get keyword count, add 1 to bias slightly
-            count = DocFeatures.naive_filter_sentences(keywords, [sentences[sentence_index]], filter_zero=False)[0][1] + 1
+            count = naive_filter_sentences(keywords, [sentences[sentence_index]], filter_zero=False)[0][1] + 1
             global_matches.append((count, doc_idx, para_idx, sentence_index))
     return global_matches
   
@@ -96,7 +119,7 @@ class DocFeatures:
       for paragraph_idx,paragraph in enumerate(paragraphs):
         sentences = paragraph.tokenized()
         # Loop through paragraphs
-        matches = DocFeatures.naive_filter_sentences(keywords, sentences)
+        matches = naive_filter_sentences(keywords, sentences)
         matches = [ (count,doc_idx,paragraph_idx,sent_idx) for sent_idx,count in matches ]
         global_matches.extend(matches)
     
@@ -115,7 +138,7 @@ class DocFeatures:
       named_entities = paragraph.named_entities()
       nes_in_sentence = named_entities[sent_idx]
       for words,ne_type in nes_in_sentence:
-        if ne_type == answer_type or answer_type == None:
+        if ne_type == answer_type: # or answer_type == None:
           global_matches.append( words )
     global_matches = [tuple(x) for x in global_matches]
     set_matches = set(global_matches)
@@ -126,38 +149,21 @@ class DocFeatures:
         filtered_matches.append(w)
     return filtered_matches
   
-  # Naive sentence filtering - looks for keywords in a sentence,
-  # and returns a list of (index, # of keywords present) tuples
-  @staticmethod
-  def naive_filter_sentences(keywords, sentences, filter_zero=True):
-    matches = []
-    keywords = [keyword.lower() for keyword in keywords]
-    for i, sentence in enumerate(sentences):
-      # Generate a word frequency hash for this sentence
-      word_hash = defaultdict(int)
-      for word in sentence:
-        word_hash[word.lower()] += 1
-      # Count the number of appearances of keywords in this sentence
-      count = 0
-      for keyword in keywords:
-        if keyword in word_hash:
-          count += word_hash[keyword]
-      if count > 0 or filter_zero is False:
-        matches.append((i, count))
-    return matches
+  # Return NPs of sentences, given sentence indices, filtering out NEs that appear
+  # in the question itself
+  # TODO maybe favor results where the NP contains NEs/is near an NE?
+  def filter_by_nps(self, question_features, indices):
+    word_filter = list(itertools.chain.from_iterable([w for w,t in question_features['nes']]))
+    global_matches = []
+    for doc_idx,paragraph_idx,sent_idx in indices:
+      paragraphs = self.docs.load_paras(doc_idx)
+      paragraph = paragraphs[paragraph_idx]
+      sentence_parse_tree = paragraph.parse_trees(flatten=True)[sent_idx]
+      nps_in_sentence = naive_extract_nps(sentence_parse_tree, word_filter)
+      nps_in_sentence = [ [w for w,p in np] for np in nps_in_sentence]
+      global_matches.extend(nps_in_sentence)
+    return global_matches
     
-  # Given a candidate sentence and question features, pick out
-  # NEs that satisfy the question category
-  def match_nes(self, question_features, doc_index, sentence_index):
-    # TODO
-    return []
-    
-  # Given a candidate sentence and question features, use WordNet
-  # to pick out NPs that satisfy the question category
-  def match_wordnet(self, question_features, doc_index, sentence_index):
-    # TODO
-    return []
-
   # goes up the hypernym relation until either an element in answer_types is
   # a hypernym of the sense and returns true, or there are no more hypernyms
   # in which case it returns false

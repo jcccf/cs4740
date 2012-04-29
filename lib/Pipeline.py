@@ -8,7 +8,7 @@ class Answerer:
   
   def __init__(self, question_features, qno):
     self.qf = question_features.features(qno)
-    print self.qf
+    # print self.qf
     self.qno = qno
     self.df = DocFeatures(qno)
     
@@ -45,11 +45,11 @@ class Answerer:
     return chunks
     
 if __name__ == '__main__':
-  for qno in range(204,205):
+  for qno in range(201,399):
     qf = QuestionFeatures()
     a = Answerer(qf, qno)
     answers = a.answer()
-    chunks = a.chunk(answers, n_chunks=100)
+    chunks = a.chunk(answers, n_chunks=5)
     print "\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )
     # print 
   
