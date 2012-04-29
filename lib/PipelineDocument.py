@@ -2,8 +2,9 @@ import nltk, Loader, itertools
 from PipelineHelpers import *
 from CoreNLPLoader import *
 from collections import defaultdict
-from QuestionClassifier import liroth_to_corenlp
+from QuestionClassifier import liroth_to_corenlp,liroth_to_wordnet
 from pprint import pprint
+from nltk.corpus import wordnet as wn
 
 # Load documents for only one specific question
 class DocFeatures:
@@ -25,6 +26,7 @@ class DocFeatures:
     indices = DocFeatures.union_sort(indices1, indices2)
     # pprint(indices)
     indices = self.filter_by_answer_type(question_features, indices)
+    #indices = self.filter_by_wordnet(question_features, indices)
     return indices
   
   @staticmethod
@@ -155,3 +157,59 @@ class DocFeatures:
   def match_wordnet(self, question_features, doc_index, sentence_index):
     # TODO
     return []
+
+  # goes up the hypernym relation until either an element in answer_types is
+  # a hypernym of the sense and returns true, or there are no more hypernyms
+  # in which case it returns false
+  def wordnet_hypernym_recursion(self, sense, answer_types):
+    if sense in answer_types:
+      return True
+    else:
+      hypernyms = sense.hypernyms()
+      for hypernym in hypernyms:
+        found = self.wordnet_hypernym_recursion(hypernym, answer_types)
+        if found:
+          return True
+      return False
+
+  def filter_by_wordnet(self, question_features, indices):
+    question_classification = question_features['classification']
+    coarse_question_class = question_classification.split(':')[0]
+    answer_types = liroth_to_wordnet(question_classification)
+    global_matches = []
+    for doc_idx,paragraph_idx,sent_idx in indices:
+      paragraphs = self.docs.load_paras(doc_idx)
+      paragraph = paragraphs[paragraph_idx]
+      tokenized_sentences = paragraph.tokenized()
+      tokens = tokenized_sentences[sent_idx]
+      for token in tokens:
+        if answer_types == None:
+          global_matches.append([token])
+        else:
+          token_synsets = wn.synsets(token)
+          found = False
+          for sense in token_synsets:
+            if coarse_question_class in ['ENTY','NUM']:
+              # this part is for words that are not names, like 'craters', 'dinosaurs'
+              # might be applicable for definition and entity type questions
+              found = self.wordnet_hypernym_recursion(sense, answer_types)
+              if found:
+                break
+            else:
+              # this part is for words that are names, like 'Australia'
+              # names require the use of instance_hypernym() to get what they are
+              instance_synsets = sense.instance_hypernyms()
+              for instance_sense in instance_synsets:
+                found = self.wordnet_hypernym_recursion(instance_sense, answer_types)
+                if found:
+                  break
+          if found:
+            global_matches.append([token]) 
+    global_matches = [tuple(x) for x in global_matches]
+    set_matches = set(global_matches)
+    filtered_matches = []
+    for w in global_matches:
+      if w in set_matches:
+        set_matches.remove(w)
+        filtered_matches.append(w)
+    return filtered_matches

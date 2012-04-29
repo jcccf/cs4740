@@ -62,20 +62,21 @@ def liroth_to_wordnet(category):
     # senses won't correspond to the numeric answer, but to words near it
     elif category == 'NUM:code': senses = ['phone_number.n.01','code.n.02']
     elif category == 'NUM:count': senses = None # could be anything
-    elif category == 'NUM:date': senses = ['time period.n.01','date.n.01','date.n.02']
+    elif category == 'NUM:date': senses = ['time_period.n.01','date.n.01','date.n.02']
     elif category == 'NUM:money': senses = ['monetary_unit.n.01']
     elif category == 'NUM:ord': senses = ['chapter.n.01','rank.n.02']
     elif category == 'NUM:other': senses = ['number.n.02']
-    elif category == 'NUM:period': senses = ['time period.n.01','time_unit.n.01']
+    elif category == 'NUM:period': senses = ['time_period.n.01','time_unit.n.01']
     elif category == 'NUM:perc': senses = ['percent.n.01']
     elif category == 'NUM:speed': senses = ['speed.n.01','rate.n.02']
     elif category == 'NUM:temp': senses = ['Fahrenheit.a.01','Celsius.n.01']
     elif category == 'NUM:size': senses = ['linear_measure.n.01']
     elif category == 'NUM:weight': senses = ['mass_unit.n.01']
     else: senses = None
-    #can return as list of wn.synset or strings
-    #return [wn.synset(s) for s in senses]
-    return senses
+    if senses == None:
+      return None
+    else:
+      return [wn.synset(s) for s in senses]
 
 def liroth_to_corenlp(category):
     if category == 'ENTY:currency': senses = 'MONEY'
