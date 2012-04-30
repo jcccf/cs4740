@@ -17,13 +17,14 @@ from pprint import pprint
 ##
 def untokenize(tokens):
   acc = ''
+  striplist = ["``", "'s", "''"]
   pattern = re.compile('\w+')
   for token in tokens:
     if pattern.match(token):
       acc = acc + ' ' + token
-    else:
+    elif token not in striplist:
       acc = acc + token
-  acc = acc.replace('`` ',' ``')
+  acc = acc.replace('$ ',' $')
   return acc.strip()
 
 # The class to rule them all
@@ -72,7 +73,7 @@ class Answerer:
     
 if __name__ == '__main__':
   for qno in range(201,400):
-  # for qno in range(310,311):
+  # for qno in range(228,229):
     qf = QuestionFeatures()
     a = Answerer(qf, qno)
     # profile.run("Answerer(QuestionFeatures(), %d).answer()"%qno)
