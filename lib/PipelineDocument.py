@@ -141,11 +141,11 @@ class DocFeatures:
         if ne_type == answer_type: # or answer_type == None:
           global_matches.append( words )
     global_matches = [tuple(x) for x in global_matches]
-    set_matches = set(global_matches)
+    set_matches = set()
     filtered_matches = []
     for w in global_matches:
-      if w in set_matches:
-        set_matches.remove(w)
+      if w not in set_matches:
+        set_matches.add(w)
         filtered_matches.append(w)
     return filtered_matches
   
