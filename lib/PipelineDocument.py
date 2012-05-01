@@ -114,10 +114,30 @@ class DocFeatures:
               for _, sentence_index, x, y, z in cluster_pair:
                 sentence_indices.append(sentence_index)
           sentence_indices = set(sentence_indices)
-          for sentence_index in sentence_indices:
-            # Get keyword count, add 1 to bias slightly
-            count = naive_filter_sentences(keywords, [sentences[sentence_index]], filter_zero=False)[0][1] + 1
-            global_matches.append((count, doc_idx, para_idx, sentence_index))
+          if max(sentence_indices) < len(sentences): # Sanity check since CoreNLP might mess up coref data
+            for sentence_index in sentence_indices:
+              # Get keyword count, add 1 to bias slightly
+              try:
+                count = naive_filter_sentences(keywords, [sentences[sentence_index]], filter_zero=False)[0][1] + 1
+                global_matches.append((count, doc_idx, para_idx, sentence_index))
+              except:
+                print "DOCIDX"
+                print doc_idx
+                print "PARAINDEX"
+                print para_idx
+                print "PARA SENTENCES"
+                print paragraph.sentences()
+                print "KEYWORDS"
+                print keywords
+                print sentence_index
+                print len(sentences)
+                print "SENTENCES"
+                print sentences
+                print "CLUSTERS"
+                print clusters
+                print sentences[sentence_index]
+                print naive_filter_sentences(keywords, [sentences[sentence_index]], filter_zero=False)
+                raise Exception()
     return global_matches
   
   # Returns sentences that contain keywords from the question, ordered by

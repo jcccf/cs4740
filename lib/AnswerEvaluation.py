@@ -43,7 +43,7 @@ def evaluate_answers(filename):
               correct = True
         writer.writerow([i, questions[i]['question_classification'], 1 if correct else 0, m_all_counts])
         if not correct:
-          print i, questions[i]['question_classification'], m_all_counts
+          print i, questions[i]['question_classification'], real_answer['question'], real_answer['answers'], m_all_counts
     
   # For each answer in answers, search in documents for exact matches
   
