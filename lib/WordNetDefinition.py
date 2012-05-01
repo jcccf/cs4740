@@ -1,5 +1,6 @@
 import nltk, re
 from nltk.corpus import wordnet as wn
+from PipelineHelpers import remove_duplicates_list
 
 def get_wordnet_def_entity(entity):
     synsets = wn.synsets(entity)
@@ -12,16 +13,19 @@ def get_wordnet_def_entity(entity):
 def get_wordnet_def_entity_keywords(entity):
     synsets = wn.synsets(entity)
     if len(synsets) > 0:
-        definition = synsets[0].definition
+      keywords = []
+      for synset in synsets:
+        for lemma in synset.lemmas:
+          keywords.extend( lemma.name.replace("_"," ").lower().split() )
+        definition = synset.definition.lower()
         tokenized_def = nltk.word_tokenize(definition)
         def_pos =  nltk.pos_tag(tokenized_def)
-        keywords = []
         for (word, pos) in def_pos:
             if (pos in ['NN','NNP','NNPS','NNS']) and word != '(': # for some reason nltk tags ( as NN
                 keywords.append(word)
-        return keywords
+      return remove_duplicates_list(keywords)
     else:
-        return None
+      return None
 
 def get_def_for_question_subject(question, output='keywords'):
     match = re.match('(What is a|What is) (\w+)?', question)

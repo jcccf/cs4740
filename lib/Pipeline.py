@@ -3,6 +3,7 @@ from PipelineHelpers import *
 from PipelineQuestions import *
 from PipelineDocument import *
 from pprint import pprint
+from WordNetDefinition import get_def_for_question_subject
 
 ##
 # untokenize: Joins a list of tokens back into a string
@@ -30,7 +31,8 @@ def untokenize(tokens):
 # The class to rule them all
 class Answerer:
   
-  def __init__(self, question_features, qno):
+  def __init__(self, question, question_features, qno):
+    self.question = question
     self.qf = question_features.features(qno)
     # print self.qf
     self.qno = qno
@@ -38,6 +40,11 @@ class Answerer:
     self.stoplist = set( [("'s",), (".",), ("``","''"), ("'",)] )
     
   def answer(self):
+    wn_keywords = get_def_for_question_subject(self.question['question'], output="keywords")
+    if wn_keywords != None:
+      # pprint(self.qf['keywords'])
+      self.qf['keywords'] = remove_duplicates_list( self.qf['keywords'] + wn_keywords )
+      # pprint(self.qf['keywords'])
     answers = self.df.filter_sentences(self.qf, doc_limit=20)
     # answers = self.df.filter_by_ne_corefs(self.qf, doc_limit=20)
     answers = [ a for a in answers if tuple(a) not in self.stoplist ]
@@ -72,10 +79,11 @@ class Answerer:
     return chunks
     
 if __name__ == '__main__':
+  qf = QuestionFeatures()
+  questions = Loader.questions()
   for qno in range(201,400):
-  # for qno in range(228,229):
-    qf = QuestionFeatures()
-    a = Answerer(qf, qno)
+  # for qno in range(305,305 + 1):
+    a = Answerer(questions[qno], qf, qno)
     # profile.run("Answerer(QuestionFeatures(), %d).answer()"%qno)
     answers = a.answer()
     # pprint(answers)

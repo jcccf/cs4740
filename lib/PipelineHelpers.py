@@ -60,3 +60,12 @@ def naive_filter_sentences(keywords, sentences, filter_zero=True):
     if count > 0 or filter_zero is False:
       matches.append((i, count))
   return matches
+  
+def remove_duplicates_list(l):
+  s = set()
+  acc = []
+  for w in l:
+    if w not in s:
+      s.add(w)
+      acc.append(w)
+  return acc
