@@ -13,6 +13,10 @@ def questions_core():
 def answers():
   return pickle.load(open('data/train/parsed_answers.txt', 'rb'))
 
+# Get answers
+def real_answers():
+  return pickle.load(open('data/train/parsed_real_answers.txt', 'rb'))
+
 # Get parsed docs
 def docs(qno):
   return pickle.load(open('data/train/parsed_docs/top_docs.%d' % qno, 'rb'))

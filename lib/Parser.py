@@ -28,6 +28,7 @@ from lxml import html
 import Chunker
 import QuestionClassifier
 import argparse
+import Loader
 
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
@@ -188,11 +189,31 @@ def parse_answers():
   with open('data/train/parsed_answers.txt', 'wb') as f:
     pickle.dump(parsed_answers, f)
 
+def parse_real_answers_in_docs():
+  answers = Loader.answers()
+  found_answers = {}
+  for i in range(201, 400):
+    found_answers[i] = { 'question': answers[i]['question'], 'answers': [], 'docnos': []}
+    docs = Loader.docs(i)
+    for answer in answers[i]['answers']:
+      found_docs = []
+      for d_idx, d in enumerate(docs):
+        if d['text'] is not None:
+          for para in d['text']:
+            if answer.lower() in para.lower():
+              found_docs.append((d_idx, d['docno']))
+      if len(found_docs) > 0:
+        found_answers[i]['answers'].append(answer)
+        found_answers[i]['docnos'].append(found_docs)
+  with open('data/train/parsed_real_answers.txt', 'wb') as f:
+    pickle.dump(found_answers, f)
+
 if __name__ == '__main__':
   argparser = argparse.ArgumentParser()
   argparser.add_argument('-d', action='store_true', dest="docs", help="parse documents")
   argparser.add_argument('-q', action='store_true', dest="questions", help="parse questions")
   argparser.add_argument('-a', action='store_true', dest="answers", help="parse answers")
+  argparser.add_argument('-r', action='store_true', dest="real_answers", help="parse real answers")
   args = argparser.parse_args()
   if args.docs:
     parse_docs()
@@ -200,3 +221,5 @@ if __name__ == '__main__':
     parse_questions()
   if args.answers:
     parse_answers()
+  if args.real_answers:
+    parse_real_answers_in_docs()
