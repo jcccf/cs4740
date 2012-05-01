@@ -31,7 +31,7 @@ class Lemmatizer(object):
     try:
       with open(filename,"rb") as f:
         self.cache = pickle.load(f)
-        pprint(self.cache)
+        # pprint(self.cache)
     except:
       self.cache = dict()
 

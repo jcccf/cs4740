@@ -83,9 +83,9 @@ if __name__ == '__main__':
   qf = QuestionFeatures()
   questions = Loader.questions()
   for qno in range(201,400):
-    if qno in [254]:
-      continue
-  # for qno in range(305,305 + 5):
+  # for qno in range(384,384 + 5):
+    # if qno in [254]:
+      # continue
     a = Answerer(questions[qno], qf, qno)
     # profile.run("Answerer(QuestionFeatures(), %d).answer()"%qno)
     answers = a.answer()
