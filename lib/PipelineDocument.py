@@ -114,7 +114,8 @@ class DocFeatures:
               for _, sentence_index, x, y, z in cluster_pair:
                 sentence_indices.append(sentence_index)
           sentence_indices = set(sentence_indices)
-          if max(sentence_indices) < len(sentences): # Sanity check since CoreNLP might mess up coref data
+          # Sanity check since CoreNLP might mess up coref sentence indexing
+          if len(sentence_indices) > 0 and max(sentence_indices) < len(sentences):
             for sentence_index in sentence_indices:
               # Get keyword count, add 1 to bias slightly
               try:
