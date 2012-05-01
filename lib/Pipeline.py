@@ -72,7 +72,7 @@ class Answerer:
     return chunks
     
 if __name__ == '__main__':
-  for qno in range(201,400):
+  for qno in range(201,399):
   # for qno in range(228,229):
     qf = QuestionFeatures()
     a = Answerer(qf, qno)

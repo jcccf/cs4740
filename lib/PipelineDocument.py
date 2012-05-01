@@ -21,6 +21,8 @@ class DocFeatures:
     # else:
       # raise NotImplementedException()
     
+    words = []
+    
     # Get sentence indices, filtering by both keywords and NEs + corefs
     indices1 = self.filter_by_keyword_count(question_features, doc_limit)
     indices2 = self.filter_by_ne_corefs(question_features, doc_limit)
@@ -29,13 +31,16 @@ class DocFeatures:
     
     # Attempt to find answer types using NEs and WordNet
     # Order NE answer types before WordNet results
-    words = self.filter_by_answer_type(question_features, indices)
-    # words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
-    # words = DocFeatures.union_order(words, words2)
-    # pprint(words)
+    # But if this is definitely a description question, this is not going to help, so ignore
+    if not self.is_description(question_features):
+      words = self.filter_by_answer_type(question_features, indices)
+      # words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
+      # words = DocFeatures.union_order(words, words2)
+      # pprint(words)
     
     # Pad results with NPs from sentences
-    words.extend(self.filter_by_nps(question_features, indices))
+    # words.extend(self.filter_by_nps(question_features, indices)) # Just extract NPs
+    words.extend(self.filter_by_nps_nearby(question_features, indices)) # Extract in order of NPs near NEs
 
     return words
   
@@ -62,6 +67,15 @@ class DocFeatures:
         ihash[y] = True
         i.append(y)
     return i
+  
+  # Tries to identify some very specific description questions
+  def is_description(self, question_features):
+    pos = question_features['pos']
+    # WP is/was NN/P ? (ex. Who was Quetzacoatl?)
+    if len(pos) == 4:
+      if pos[0][1] == "WP" and (pos[1][0] == "is" or pos[1][0] == "was") and "NN" in pos[2][1]:
+        return True
+    return False
   
   # TODO can match more exactly (ex. match only "The Golden Gate Bridge" vs "Directors of the Golden Gate Bridge District")
   # Filters by matching NEs in question to words in coreference clusters in paragraphs,
@@ -151,7 +165,6 @@ class DocFeatures:
   
   # Return NPs of sentences, given sentence indices, filtering out NEs that appear
   # in the question itself
-  # TODO maybe favor results where the NP contains NEs/is near an NE?
   def filter_by_nps(self, question_features, indices):
     word_filter = list(itertools.chain.from_iterable([w for w,t in question_features['nes']]))
     global_matches = []
@@ -163,6 +176,40 @@ class DocFeatures:
       nps_in_sentence = [ [w for w,p in np] for np in nps_in_sentence]
       global_matches.extend(nps_in_sentence)
     return global_matches
+  
+  # Return NPs of sentences, given sentence indices, filtering out NEs that appear
+  # in the question itself, and prioritze NPs that are near NPs containing the question's NEs
+  # (+/-1 NP away)
+  def filter_by_nps_nearby(self, question_features, indices):
+    word_filter = list(itertools.chain.from_iterable([w for w,t in question_features['nes']]))
+    high_matches, low_matches = [], []
+    for doc_idx,paragraph_idx,sent_idx in indices:
+      paragraphs = self.docs.load_paras(doc_idx)
+      paragraph = paragraphs[paragraph_idx]
+      sentence_parse_tree = paragraph.parse_trees(flatten=True)[sent_idx]
+      nps_in_sentence = naive_extract_nps(sentence_parse_tree)
+      nps_in_sentence = [ tuple([w for w,p in np]) for np in nps_in_sentence]
+      # Pick NPs near NEs and prioritize them
+      high, low = [], []
+      for i, np in enumerate(nps_in_sentence):
+        for words, word_type in question_features['nes']:
+          matched = True
+          for word in words:
+            if word not in np: matched = False
+          if matched is True:
+            if i+1 < len(nps_in_sentence) and nps_in_sentence[i+1] not in high:
+              high.append(nps_in_sentence[i+1])
+            if nps_in_sentence[i] not in high:
+              high.append(nps_in_sentence[i])
+            if i-1 >= 0 and nps_in_sentence[i-1] not in high:
+              high.append(nps_in_sentence[i-1])
+      for np in nps_in_sentence:
+        if np not in high: high.append(np)
+      high_matches.extend(high)
+      low_matches.extend(low)
+      high_matches = [[w for w in np if w not in word_filter] for np in high_matches]
+      low_matches = [[w for w in np if w not in word_filter] for np in low_matches]
+    return high_matches + low_matches
     
   # goes up the hypernym relation until either an element in answer_types is
   # a hypernym of the sense and returns true, or there are no more hypernyms
