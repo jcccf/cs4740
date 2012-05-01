@@ -65,7 +65,7 @@ def naive_filter_sentences_unweighted(keywords, sentences, filter_zero=True):
   matches = []
   keywords = [keyword.lower() for keyword in keywords]
   for i, sentence in enumerate(sentences):
-    word_hash = { word.lower():True for word in sentence }
+    word_hash = dict( [(word.lower(),True) for word in sentence] )
     count = 0
     for keyword in keywords:
       if keyword in word_hash: count += 1

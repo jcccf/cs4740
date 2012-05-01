@@ -3,7 +3,7 @@ from PipelineHelpers import *
 from PipelineQuestions import *
 from PipelineDocument import *
 from pprint import pprint
-from WordNetDefinition import get_def_for_question_subject
+from WordNetDefinition import get_def_for_question_subject, lemmatize, lemmatizer
 
 ##
 # untokenize: Joins a list of tokens back into a string
@@ -43,10 +43,11 @@ class Answerer:
     wn_keywords = get_def_for_question_subject(self.question['question'], output="keywords")
     if wn_keywords != None:
       # pprint(self.qf['keywords'])
-      self.qf['keywords'] = remove_duplicates_list( self.qf['keywords'] + wn_keywords )
+      self.qf['keywords'] = lemmatize(remove_duplicates_list( self.qf['keywords'] + wn_keywords ))
       # pprint(self.qf['keywords'])
-    answers = self.df.filter_sentences(self.qf, doc_limit=20)
-    # answers = self.df.filter_by_ne_corefs(self.qf, doc_limit=20)
+    
+    answers = self.df.filter_sentences(self.qf, doc_limit=50)
+    # answers = self.df.filter_by_ne_corefs(self.qf, doc_limit=50)
     answers = [ a for a in answers if tuple(a) not in self.stoplist ]
     return answers
     
@@ -82,7 +83,9 @@ if __name__ == '__main__':
   qf = QuestionFeatures()
   questions = Loader.questions()
   for qno in range(201,400):
-  # for qno in range(305,305 + 1):
+    if qno in [254]:
+      continue
+  # for qno in range(305,305 + 5):
     a = Answerer(questions[qno], qf, qno)
     # profile.run("Answerer(QuestionFeatures(), %d).answer()"%qno)
     answers = a.answer()
@@ -90,4 +93,4 @@ if __name__ == '__main__':
     chunks = a.chunk(answers, n_chunks=5)
     print "\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )
     # print 
-  
+  # lemmatizer.save()

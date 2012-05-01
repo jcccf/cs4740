@@ -131,7 +131,8 @@ class DocFeatures:
       paragraphs = self.docs.load_paras(doc_idx)
       # paragraphs = list of CoreNLPFeatures
       for paragraph_idx,paragraph in enumerate(paragraphs):
-        sentences = paragraph.tokenized()
+        # sentences = paragraph.tokenized()
+        sentences = paragraph.lemmas()
         # Loop through paragraphs
         matches = naive_filter_sentences(keywords, sentences)
         matches = [ (count,doc_idx,paragraph_idx,sent_idx) for sent_idx,count in matches ]

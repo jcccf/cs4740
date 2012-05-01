@@ -1,7 +1,60 @@
-import nltk, re
+import nltk, re, cPickle as pickle, time
 from nltk.corpus import wordnet as wn
 from PipelineHelpers import remove_duplicates_list
+from nltk.stem.wordnet import WordNetLemmatizer
+from pprint import pprint
 
+class Lemmatizer(object):
+  def __init__(self):
+    self.lemmatizer = WordNetLemmatizer()
+    self.load()
+    self.has_changed = False
+    
+  def lemmatize(self,word):
+    word = word.lower()
+    if word in self.cache:
+      return self.cache[word]
+    
+    lemma = self.lemmatizer.lemmatize(word)
+    self.cache[word] = lemma
+    self.has_changed = True
+    # print "Adding:",word,lemma
+    return lemma
+  
+  def save(self,filename="data/train/cached_lemmas.txt"):
+    if self.has_changed:
+      with open(filename,"wb") as f:
+        pickle.dump(self.cache, f)
+        f.flush()
+  
+  def load(self,filename="data/train/cached_lemmas.txt"):
+    try:
+      with open(filename,"rb") as f:
+        self.cache = pickle.load(f)
+        pprint(self.cache)
+    except:
+      self.cache = dict()
+
+  def __del__(self):
+    self.save()
+    # time.sleep(1.0)
+    # pass
+    
+lemmatizer = Lemmatizer()
+
+def lemmatize(keywords,add_synsets=False):
+  # lemmatizer = WordNetLemmatizer()
+  new_keywords = []
+  for word in keywords:
+    new_keywords.append(lemmatizer.lemmatize(word))
+    if add_synsets:
+      synsets = wn.synsets(word)
+      for syn in synsets:
+        for lemma in syn.lemmas:
+          new_keywords += lemma.name.lower().split("_")
+  new_keywords = remove_duplicates_list(new_keywords)
+  return new_keywords
+  
 def get_wordnet_def_entity(entity):
     synsets = wn.synsets(entity)
     if len(synsets) > 0:
@@ -16,7 +69,7 @@ def get_wordnet_def_entity_keywords(entity):
       keywords = []
       for synset in synsets:
         for lemma in synset.lemmas:
-          keywords.extend( lemma.name.replace("_"," ").lower().split() )
+          keywords.extend( lemma.name.lower().split("_") )
         definition = synset.definition.lower()
         tokenized_def = nltk.word_tokenize(definition)
         def_pos =  nltk.pos_tag(tokenized_def)
