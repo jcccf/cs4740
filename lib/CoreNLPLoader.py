@@ -3,6 +3,8 @@ from unidecode import unidecode
 import jsonrpc
 import argparse
 
+DIR = Loader.DIR
+
 class CoreNLPQuestionLoader():
   def __init__(self, host="127.0.0.1", port=8080):
     self.host,self.port = host,port
@@ -19,7 +21,7 @@ class CoreNLPQuestionLoader():
       for qno, q in qs.iteritems():
         json = parser.parse(unidecode(q['question']))
         parsed_qs[qno] = json    
-      with open('data/train/parsed_questions_core.txt', 'wb') as f:
+      with open(DIR+'/parsed_questions_core.txt', 'wb') as f:
         pickle.dump(parsed_qs, f)
         self.questions = parsed_qs
   
@@ -31,7 +33,7 @@ class CoreNLPLoader():
   def __init__(self, qno, host="127.0.0.1", port=8080):
     self.host,self.port = host,port
     try:
-      os.makedirs('data/train/parsed_docs_core')
+      os.makedirs(DIR+'/parsed_docs_core')
     except:
       pass
     self.qno = qno
@@ -88,7 +90,7 @@ class CoreNLPLoader():
         parsed_docs.append(parsed_doc)
         print "done"
         sys.stdout.flush()
-      with open('data/train/parsed_docs_core/top_docs.%d' % self.qno, 'wb') as f:
+      with open(DIR+'/parsed_docs_core/top_docs.%d' % self.qno, 'wb') as f:
         pickle.dump(parsed_docs, f)
       self.docs = parsed_docs
     

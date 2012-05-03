@@ -30,6 +30,8 @@ import QuestionClassifier
 import argparse
 import Loader
 
+DIR = Loader.DIR
+
 # Parse nice files for each document
 # docs = list of {docno, title, leadpara, text}
 
@@ -92,12 +94,12 @@ def split_into_paras(text, limit=100):
 def parse_docs():
   print "Parsing Docs"
   try:
-    os.makedirs('data/train/parsed_docs')
+    os.makedirs(DIR+'/parsed_docs')
   except:
     pass
 
   parser = etree.XMLParser(recover=True)
-  for filename in glob.glob("data/train/docs/top_docs.*"):
+  for filename in glob.glob(DIR+"/docs/top_docs.*"):
     print filename
     docs = []
     with open(filename, 'r') as f:
@@ -130,18 +132,17 @@ def parse_docs():
           text = None
         docs.append({ "docno": docno, "score": float(score), "headline": headline, "leadpara": leadpara, "text": text})
     # Write to a pickle
-    with open('data/train/parsed_docs/%s' % os.path.basename(filename), 'wb') as f:
+    with open(DIR+'/parsed_docs/%s' % os.path.basename(filename), 'wb') as f:
       pickle.dump(docs, f)
 
 # Identify the question type and parse out the NEs
 def parse_questions():
   print "Parsing Questions..."
   parsed_questions = {}
-  with open('data/train/questions.txt', 'r') as f:
+  with open(DIR+'/questions.txt', 'r') as f:
     data = f.read()
     questions = re.split('[\s]*</top>[\s]*', data)
-    assert len(questions) == 200
-    questions.pop()
+    if len(questions[-1].strip()) == 0: questions.pop()
     qc = QuestionClassifier.QuestionClassifier()
     for question in questions:
       question_number = int(re.search(r"<num>[\s]*Number:[\s]*([0-9]+)", question).group(1))
@@ -163,14 +164,14 @@ def parse_questions():
       # print qwords, nouns, nes
       # print question_pos
       parsed_questions[question_number] = { "question": question, "pos": question_pos, "ne": question_nes, "parse_tree": question_tree, "question_classification": question_classification, "question_words": qwords, "nouns": nouns, "ne_words": nes }
-  with open('data/train/parsed_questions.txt', 'wb') as f:
+  with open(DIR+'/parsed_questions.txt', 'wb') as f:
     pickle.dump(parsed_questions, f)
 
 # Parse out answers
 def parse_answers():
   print "Parsing Answers..."
   parsed_answers = {}
-  with open('data/train/answers.txt', 'r') as f:
+  with open(DIR+'/answers.txt', 'r') as f:
     data = f.read()
     answers = data.split("Question")
     answers.pop(0)
@@ -186,7 +187,7 @@ def parse_answers():
         else:
           theanswer.append(part)
       parsed_answers[qno] = { "question": question, "docnos": doc, "answers": theanswer }
-  with open('data/train/parsed_answers.txt', 'wb') as f:
+  with open(DIR+'/parsed_answers.txt', 'wb') as f:
     pickle.dump(parsed_answers, f)
 
 def parse_real_answers_in_docs():
@@ -205,7 +206,7 @@ def parse_real_answers_in_docs():
       if len(found_docs) > 0:
         found_answers[i]['answers'].append(answer)
         found_answers[i]['docnos'].append(found_docs)
-  with open('data/train/parsed_real_answers.txt', 'wb') as f:
+  with open(DIR+'/parsed_real_answers.txt', 'wb') as f:
     pickle.dump(found_answers, f)
 
 if __name__ == '__main__':
