@@ -41,7 +41,7 @@ def clean_text(text):
   text = re.sub(r'\[[^\[\]]*\]', '', text) # Remove square brackets
   text = re.sub(r"([\-]+[ ]*){2,}", "-", text) # Turn multiple dashes into single dash
   text = re.sub(r"(\\|\|)", "", text)
-  text = text.replace("`", "\'").replace("_", " ")
+  text = text.replace("`", "\'").replace("_", " ").replace("''", "\"")
   text = re.sub(r"([0-9]+)[\s]*\/[\s]*([0-9]+)[\s]*\/[\s]*([0-9]*)", r"\1\/\2\/\3", text)
   text = re.sub(r"([\'0-9]+)[\s]*\/[\s]*([\'0-9]+)", r"\1\/\2", text)
   text = re.sub(r"([\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*;[\s]*|[\s]*;[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*|[\s]*\.[\s]*\.[\s]*\.[\s]*\.[\s]*)", ". ", text)
