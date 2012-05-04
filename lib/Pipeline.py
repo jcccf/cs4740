@@ -50,6 +50,18 @@ class Answerer:
     # answers = self.df.filter_by_ne_corefs(self.qf, doc_limit=50)
     answers = [ a for a in answers if tuple(a) not in self.stoplist ]
     return answers
+  
+  def nonchunk(self,answers,n_chunks=5):
+    # Doesn't chunk answers together.
+    chunks = []
+    for i in range(n_chunks):
+      if i < len(answers):
+        ans = answers[i]
+        untokenized_ans = untokenize(ans).split()
+        chunks.append( " ".join(untokenized_ans[:10]) )
+      else:
+        chunks.append("nil")
+    return chunks
     
   def chunk(self,answers,chunksize=10,n_chunks=5):
     answers = answers[0: n_chunks*chunksize]
@@ -90,7 +102,8 @@ if __name__ == '__main__':
     # profile.run("Answerer(QuestionFeatures(), %d).answer()"%qno)
     answers = a.answer()
     # pprint(answers)
-    chunks = a.chunk(answers, n_chunks=5)
+    # chunks = a.chunk(answers, n_chunks=5)
+    chunks = a.nonchunk(answers, n_chunks=5)
     print "\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )
     # print 
   # lemmatizer.save()
