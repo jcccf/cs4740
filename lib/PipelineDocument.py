@@ -87,7 +87,6 @@ class DocFeatures:
     parse_tree = question_features['parse_tree']
     nps = extract_nps_without_determiners(parse_tree)
     phrases = [[w[0] for w in np] for np in nps]
-    print phrases
     for doc_idx in range(0, min(doc_limit,len(self.docs.docs))):
       paragraphs = self.docs.load_paras(doc_idx)
       for para_idx, paragraph in enumerate(paragraphs):
