@@ -26,7 +26,10 @@ class DocFeatures:
     # Get sentence indices, filtering by both keywords and NEs + corefs
     indices1 = self.filter_by_keyword_count(question_features, doc_limit)
     indices2 = self.filter_by_ne_corefs(question_features, doc_limit)
+    indices3 = self.filter_by_exact_np_matches(question_features, doc_limit)
     indices = DocFeatures.union_sort(indices1, indices2)
+    indices = DocFeatures.union_sort(indices3, indices)
+    indices = [ (x,y,z) for w,x,y,z in indices ]
     # pprint(indices)
     
     # Attempt to find answer types using NEs and WordNet
@@ -54,7 +57,7 @@ class DocFeatures:
         i1hash[(x,y,z)] = True
         i.append((c,x,y,z))
     i = sorted(i, key = lambda x: -x[0]) # sort by count descending
-    i = [ (x,y,z) for w,x,y,z in i ] # get rid of counts
+    # i = [ (x,y,z) for w,x,y,z in i ] # get rid of counts
     return i
   
   # Union the lists i1 and i2, ensuring that all elements in i1 come before those in i2
@@ -76,6 +79,23 @@ class DocFeatures:
       if pos[0][1] == "WP" and (pos[1][0] == "is" or pos[1][0] == "was") and "NN" in pos[2][1]:
         return True
     return False
+  
+  # Filters by exact NP matches of NPs in the question to NPs in a sentence. Weighs these results more heavily,
+  # since these are essentially phrase matches rather than individual word matches
+  def filter_by_exact_np_matches(self, question_features, doc_limit=20):
+    global_matches = []
+    parse_tree = question_features['parse_tree']
+    nps = extract_nps_without_determiners(parse_tree)
+    phrases = [[w[0] for w in np] for np in nps]
+    print phrases
+    for doc_idx in range(0, min(doc_limit,len(self.docs.docs))):
+      paragraphs = self.docs.load_paras(doc_idx)
+      for para_idx, paragraph in enumerate(paragraphs):
+        sentences = paragraph.sentences()
+        matches = naive_filter_sentences_phrases(phrases, sentences)
+        matches = [ (count,doc_idx,para_idx,sent_idx) for sent_idx,count in matches ]
+        global_matches.extend(matches)        
+    return global_matches
   
   # TODO can match more exactly (ex. match only "The Golden Gate Bridge" vs "Directors of the Golden Gate Bridge District")
   # Filters by matching NEs in question to words in coreference clusters in paragraphs,
