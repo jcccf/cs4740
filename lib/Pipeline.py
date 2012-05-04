@@ -4,6 +4,7 @@ from PipelineQuestions import *
 from PipelineDocument import *
 from pprint import pprint
 from WordNetDefinition import get_def_for_question_subject, lemmatize, lemmatizer
+import argparse
 
 ##
 # untokenize: Joins a list of tokens back into a string
@@ -92,18 +93,24 @@ class Answerer:
     return chunks
     
 if __name__ == '__main__':
+  argparser = argparse.ArgumentParser()
+  argparser.add_argument('-c', action='store_true', dest="chunk", help="chunk answers?")
+  argparser.add_argument('-n', type=int, action='store', default=5, dest="n_chunks", help="no. of answers to give")
+  argparser.add_argument('-l', type=int, action='store', default=400, dest="l", help="first question # to answer")
+  argparser.add_argument('-u', type=int, action='store', default=600, dest="u", help="1 + last question # to answer")
+  args = argparser.parse_args()
+  
   qf = QuestionFeatures()
   questions = Loader.questions()
-  for qno in range(400,600):
-  # for qno in range(384,384 + 5):
-    # if qno in [254]:
-      # continue
+  for qno in range(args.l,args.u):
     a = Answerer(questions[qno], qf, qno)
-    # profile.run("Answerer(QuestionFeatures(), %d).answer()"%qno)
     answers = a.answer()
     # pprint(answers)
-    # chunks = a.chunk(answers, n_chunks=5)
-    chunks = a.nonchunk(answers, n_chunks=5)
+    if args.chunk:
+      chunks = a.chunk(answers, n_chunks=args.n_chunks)
+    else:
+      chunks = a.nonchunk(answers, n_chunks=args.n_chunks)
+    
     print "\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )
     # print 
   # lemmatizer.save()
