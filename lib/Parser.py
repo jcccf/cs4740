@@ -127,7 +127,9 @@ def parse_docs():
         else:
           leadpara = None
         if len(tree.xpath("//TEXT")) > 0:
-          text = clean_text(etree.tostring(tree.xpath("//TEXT")[0]))
+          text = []
+          for elt in tree.xpath("//TEXT"):
+            text.extend(clean_text(etree.tostring(elt)))
         else:
           text = None
         docs.append({ "docno": docno, "score": float(score), "headline": headline, "leadpara": leadpara, "text": text})
