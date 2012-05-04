@@ -120,7 +120,8 @@ class QuestionClassifier:
         # Bag of words of keywords
         for word in words:
             if word in self.keywordlist2:
-                features['kw:'+self.keywordlist2[word]] += 1
+              for keyword in self.keywordlist2[word]:
+                features['kw:'+keyword] += 1
         return features
         
     def load_labelled_data(self, filename, fine_grain=True):
@@ -144,7 +145,7 @@ class QuestionClassifier:
         return self.classifier.classify(self.question_features(question))
 
 if __name__ == '__main__':
-    fine_grain = True
+    fine_grain = False
     classifier = QuestionClassifier(fine_grain)
     test_set = classifier.load_labelled_data('data/train/qc/TREC_10.label',fine_grain)
     train_set = classifier.load_labelled_data('data/train/qc/train_5500.label', fine_grain=fine_grain)
