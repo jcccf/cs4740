@@ -54,8 +54,7 @@ def clean_para(text):
   text = re.sub(r'(\'(?=\S)[^\']*(?<=\S)\')|\'', lambda m: m.group(1) or '', text)
   text = re.sub(r'(\((?=\S)[^\(\)]*(?<=\S)\))|\(|\)', lambda m: m.group(1) or '', text) # Clean unbalanced ()
   text = re.sub(r'(\[(?=\S)[^\[\]]*(?<=\S)\])|\[|\]', lambda m: m.group(1) or '', text) # Clean unbalanced []
-  if len(text) > 0 and text[0] == ';':
-    text = text.strip()[1:]
+  text = re.sub(r'^[\s]*\;[\s]*(.+)', r'\1', text) # Remove ; from beginning of string
   return text
 
 # Split into paragraphs containing no more than limit=100 words each.
