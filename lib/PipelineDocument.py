@@ -36,7 +36,9 @@ class DocFeatures:
       if PIPE_DEBUG: print "Not a naive description question"
       words = self.filter_by_answer_type(question_features, indices)
       if PIPE_DEBUG: print "Words by answer type\n\t", words
-      # words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
+      words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
+      if PIPE_DEBUG: print "Words by wordnet type\n\t", words2
+      words = DocFeatures.match_prioritize(words, words2)
       # words = DocFeatures.union_order(words, words2)
       # pprint(words)
     
@@ -71,6 +73,18 @@ class DocFeatures:
         i.append(y)
     return i
   
+  # Return a reordered list of i1, where we prioritize elements of i1 that also appear in i2
+  @staticmethod
+  def match_prioritize(i1, i2):
+    highs, lows = [], []
+    ihash = dict([(x,True) for x in i2])
+    for x in i1:
+      if x in ihash:
+        highs.append(x)
+      else:
+        lows.append(x)
+    return highs + lows
+      
   # Tries to identify some very specific description questions
   def is_description(self, question_features):
     pos = question_features['pos']
