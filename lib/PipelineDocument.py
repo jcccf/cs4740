@@ -101,11 +101,17 @@ class DocFeatures:
     parse_tree = question_features['parse_tree']
     nps = extract_nps_without_determiners(parse_tree)
     phrases = [[w[0] for w in np] for np in nps]
+    phrase_regexes = []
+    for phrase in phrases:
+      # Generate Regex for this phrase
+      pre = re.compile("".join([w+"[\s]+" for w in phrase])[:-5])
+      phrase_regexes.append((pre, 2**(2*(len(phrase)-1))))
     for doc_idx in range(0, min(doc_limit,len(self.docs.docs))):
       paragraphs = self.docs.load_paras(doc_idx)
       for para_idx, paragraph in enumerate(paragraphs):
         sentences = paragraph.sentences()
-        matches = naive_filter_sentences_phrases(phrases, sentences)
+        tokenized_sentences = paragraph.tokenized()
+        matches = naive_filter_sentences_phrases(phrase_regexes, sentences, tokenized_sentences)
         matches = [ (count,doc_idx,para_idx,sent_idx) for sent_idx,count in matches ]
         global_matches.extend(matches)        
     return global_matches
