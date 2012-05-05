@@ -96,23 +96,35 @@ class Answerer:
     
 if __name__ == '__main__':
   argparser = argparse.ArgumentParser()
-  argparser.add_argument('-c', action='store_true', dest="chunk", help="chunk answers?")
+  # argparser.add_argument('-c', action='store_true', dest="chunk", help="chunk answers?")
   argparser.add_argument('-n', type=int, action='store', default=5, dest="n_chunks", help="no. of answers to give")
   argparser.add_argument('-l', type=int, action='store', default=400, dest="l", help="first question # to answer")
   argparser.add_argument('-u', type=int, action='store', default=600, dest="u", help="1 + last question # to answer")
+  argparser.add_argument('-p', type=str, action='store', default="output_", dest="out_prefix", help="Prefix of output files")
+  
   args = argparser.parse_args()
   
   qf = QuestionFeatures()
   questions = Loader.questions()
+  f_nochunk = open(args.out_prefix+"nochunk.txt", 'w')
+  f_chunk = open(args.out_prefix+"chunk.txt", 'w')
   for qno in range(args.l,args.u):
     a = Answerer(questions[qno], qf, qno)
     answers = a.answer()
     # pprint(answers)
-    if args.chunk:
-      chunks = a.chunk(answers, n_chunks=args.n_chunks)
-    else:
-      chunks = a.nonchunk(answers, n_chunks=args.n_chunks)
+    # if args.chunk:
+      # chunks = a.chunk(answers, n_chunks=args.n_chunks)
+    # else:
+      # chunks = a.nonchunk(answers, n_chunks=args.n_chunks)
+    # print "\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )
     
+    chunks = a.nonchunk(answers, n_chunks=args.n_chunks)
+    f_nochunk.write("\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )+"\n")
+    # Only prints chunked version to stdout
+    chunks = a.chunk(answers, n_chunks=args.n_chunks)
+    f_chunk.write("\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )+"\n")
     print "\n".join( ["%d top_docs.%d "%(qno,qno) + chunk for chunk in chunks] )
     # print 
   # lemmatizer.save()
+  f_nochunk.close()
+  f_chunk.close()
