@@ -6,6 +6,9 @@ from pprint import pprint
 from WordNetDefinition import get_def_for_question_subject, lemmatize, lemmatizer
 import argparse
 
+# Set this to true to show debug output
+PIPE_DEBUG = False
+
 ##
 # untokenize: Joins a list of tokens back into a string
 #
@@ -35,20 +38,19 @@ class Answerer:
   def __init__(self, question, question_features, qno):
     self.question = question
     self.qf = question_features.features(qno)
-    # print self.qf
+    if PIPE_DEBUG: print "Question Features\n\t", self.qf
     self.qno = qno
     self.df = DocFeatures(qno)
     self.stoplist = set( [("'s",), (".",), ("``","''"), ("'",)] )
     
   def answer(self):
     wn_keywords = get_def_for_question_subject(self.question['question'], output="keywords")
+    if PIPE_DEBUG: print "Wordnet Keywords\n\t", wn_keywords
     if wn_keywords != None:
-      # pprint(self.qf['keywords'])
       self.qf['keywords'] = lemmatize(remove_duplicates_list( self.qf['keywords'] + wn_keywords ))
-      # pprint(self.qf['keywords'])
+      if PIPE_DEBUG: print "After Lemmatization\n\t", self.qf['keywords']
     
     answers = self.df.filter_sentences(self.qf, doc_limit=50)
-    # answers = self.df.filter_by_ne_corefs(self.qf, doc_limit=50)
     answers = [ a for a in answers if tuple(a) not in self.stoplist ]
     return answers
   
