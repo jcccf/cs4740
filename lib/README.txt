@@ -1,4 +1,4 @@
-A Magic QA System
+Our QA System
 
 How to use
 ==========
