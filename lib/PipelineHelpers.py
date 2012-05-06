@@ -76,25 +76,27 @@ def naive_filter_sentences(keywords, sentences, filter_zero=True):
       if keyword in word_hash:
         count += word_hash[keyword]
     if count > 0 or filter_zero is False:
-      matches.append((i, count))
+      matches.append((i, float(count) / len(sentence)))
+#      matches.append((i, count))
   return matches
   
 # Naive sentence filtering - look for phrases in an UNTOKENIZED sentence
 # and returns a list of (index, # of keywords present (special squared value)) tuples
-def naive_filter_sentences_phrases(phrases, sentences):
+def naive_filter_sentences_phrases(phrase_regexes, sentences, tokenized_sentences):
   matches = []
-  phrase_regexes = []
-  for phrase in phrases:
-    # Generate Regex for this phrase
-    pre = re.compile("".join([w+"[\s]+" for w in phrase])[:-5])
-    phrase_regexes.append((pre, 2**(2*(len(phrase)-1))))
+  # phrase_regexes = []
+  # for phrase in phrases:
+    ## Generate Regex for this phrase
+    # pre = re.compile("".join([w+"[\s]+" for w in phrase])[:-5])
+    # phrase_regexes.append((pre, 2**(2*(len(phrase)-1))))
   for i, sentence in enumerate(sentences):
     count = 0
     for pre, prelen in phrase_regexes:
       if pre.search(sentence):
         count += prelen
     if count > 0:
-      matches.append((i, count))
+      matches.append((i, float(count) / len(tokenized_sentences[i])))
+#      matches.append((i, count))
   return matches
     
 def naive_filter_sentences_unweighted(keywords, sentences, filter_zero=True):

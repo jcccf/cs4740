@@ -1,6 +1,7 @@
 import nltk, Loader, itertools
 from PipelineHelpers import *
 from CoreNLPLoader import *
+from Pipeline import *
 from QuestionClassifier import liroth_to_corenlp,liroth_to_wordnet
 from pprint import pprint
 from nltk.corpus import wordnet as wn
@@ -14,36 +15,37 @@ class DocFeatures:
   # Limit search to the top doc_limit docs
   # Return a list of (tokenized sentence)
   def filter_sentences(self, question_features, doc_limit=20):
-    # if filter_type == "answer_type":
-      # return self.filter_by_answer_type(question_features, doc_limit)
-    # elif filter_type == "keywords":
-      # return self.filter_by_keyword_count(question_features, doc_limit)
-    # else:
-      # raise NotImplementedException()
-    
     words = []
     
     # Get sentence indices, filtering by both keywords and NEs + corefs
     indices1 = self.filter_by_keyword_count(question_features, doc_limit)
+    if PIPE_DEBUG: print "Indices from Keyword Count\n\t", indices1
     indices2 = self.filter_by_ne_corefs(question_features, doc_limit)
+    if PIPE_DEBUG: print "Indices from NE Corefs\n\t", indices2
     indices3 = self.filter_by_exact_np_matches(question_features, doc_limit)
+    if PIPE_DEBUG: print "Indices from Exact NP Matches\n\t", indices3
     indices = DocFeatures.union_sort(indices1, indices2)
     indices = DocFeatures.union_sort(indices3, indices)
     indices = [ (x,y,z) for w,x,y,z in indices ]
-    # pprint(indices)
+    if PIPE_DEBUG: print "Indices Combined\n\t", indices
     
     # Attempt to find answer types using NEs and WordNet
     # Order NE answer types before WordNet results
     # But if this is definitely a description question, this is not going to help, so ignore
     if not self.is_description(question_features):
+      if PIPE_DEBUG: print "Not a naive description question"
       words = self.filter_by_answer_type(question_features, indices)
-      # words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
+      if PIPE_DEBUG: print "Words by answer type\n\t", words
+      words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
+      if PIPE_DEBUG: print "Words by wordnet type\n\t", words2
+      words = DocFeatures.match_prioritize(words, words2)
       # words = DocFeatures.union_order(words, words2)
       # pprint(words)
     
     # Pad results with NPs from sentences
     # words.extend(self.filter_by_nps(question_features, indices)) # Just extract NPs
     words.extend(self.filter_by_nps_nearby(question_features, indices)) # Extract in order of NPs near NEs
+    if PIPE_DEBUG: print "Words with nearby NPs\n\t", words
 
     return words
   
@@ -71,6 +73,18 @@ class DocFeatures:
         i.append(y)
     return i
   
+  # Return a reordered list of i1, where we prioritize elements of i1 that also appear in i2
+  @staticmethod
+  def match_prioritize(i1, i2):
+    highs, lows = [], []
+    ihash = dict([(x,True) for x in i2])
+    for x in i1:
+      if x in ihash:
+        highs.append(x)
+      else:
+        lows.append(x)
+    return highs + lows
+      
   # Tries to identify some very specific description questions
   def is_description(self, question_features):
     pos = question_features['pos']
@@ -87,11 +101,17 @@ class DocFeatures:
     parse_tree = question_features['parse_tree']
     nps = extract_nps_without_determiners(parse_tree)
     phrases = [[w[0] for w in np] for np in nps]
+    phrase_regexes = []
+    for phrase in phrases:
+      # Generate Regex for this phrase
+      pre = re.compile("".join([w+"[\s]+" for w in phrase])[:-5])
+      phrase_regexes.append((pre, 2**(2*(len(phrase)-1))))
     for doc_idx in range(0, min(doc_limit,len(self.docs.docs))):
       paragraphs = self.docs.load_paras(doc_idx)
       for para_idx, paragraph in enumerate(paragraphs):
         sentences = paragraph.sentences()
-        matches = naive_filter_sentences_phrases(phrases, sentences)
+        tokenized_sentences = paragraph.tokenized()
+        matches = naive_filter_sentences_phrases(phrase_regexes, sentences, tokenized_sentences)
         matches = [ (count,doc_idx,para_idx,sent_idx) for sent_idx,count in matches ]
         global_matches.extend(matches)        
     return global_matches
