@@ -36,9 +36,9 @@ class DocFeatures:
       if PIPE_DEBUG: print "Not a naive description question"
       words = self.filter_by_answer_type(question_features, indices)
       if PIPE_DEBUG: print "Words by answer type\n\t", words
-      words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
-      if PIPE_DEBUG: print "Words by wordnet type\n\t", words2
-      words = DocFeatures.match_prioritize(words, words2)
+      # words2 = self.filter_by_wordnet(question_features, indices) # Doesn't seem to work well :(
+      # if PIPE_DEBUG: print "Words by wordnet type\n\t", words2
+      # words = DocFeatures.match_prioritize(words, words2)
       # words = DocFeatures.union_order(words, words2)
       # pprint(words)
     
