@@ -1,10 +1,13 @@
-A Magic QA System
+Our QA System
 
 How to use
 ==========
-1. Place the train files in /data, within the /lib folder
-2. Run Parser.py to prepare the documents in a nicer format
-3. Read the top of Parser.py to find out what kind of output Parser.py generates
+1. Place the train and test files in /data, within the /lib folder.
+2. Modify the line starting with "DIR" in Loader.py, depending on whether you want to evaluate the train set or the test set.
+3. Run Parser.py to prepare the documents in a nicer format. These include the documents (-d) and the questions (-q).
+4. Read the top of Parser.py to find out what kind of output Parser.py generates
+5. Run CoreNLP and generate CoreNLP parsed documents (see separate section below).
+6. Run Pipeline.py to generate answers to the range of questions specified at the command line.
 
 CoreNLP
 =======
@@ -19,6 +22,10 @@ http://nlp.stanford.edu/software/stanford-corenlp-2012-04-09.tgz
 
 4. Parse some documents using "python Parser.py -d". You only need to do this once, as the parsed documents are saved.
 
-5. To load and parse documents, use CoreNLPLoader in CoreNLPLoader.py.
+5. To load and parse documents, use CoreNLPLoader in CoreNLPLoader.py. Also run CoreNLPLoader.py with the option -q to parse questions.
 
 6. To see what kind of data CoreNLP obtains, see the class CoreNLPFeatures in CoreNLPParser.py.
+
+Additional Notes
+=======
+- To see what kind of options are available for Parser.py, CoreNLPLoader.py, and Pipeline.py, run each file with the option "--help".

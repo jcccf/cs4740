@@ -28,6 +28,13 @@ class DocFeatures:
     indices = DocFeatures.union_sort(indices3, indices)
     indices = [ (x,y,z) for w,x,y,z in indices ]
     if PIPE_DEBUG: print "Indices Combined\n\t", indices
+    if PIPE_DEBUG:
+      print "Index/Sentence Map"
+      for index in indices:
+        doc_idx,paragraph_idx,sent_idx = index
+        paragraphs = self.docs.load_paras(doc_idx)
+        paragraph = paragraphs[paragraph_idx]
+        print index, "=>", paragraph.sentences()[sent_idx]
     
     # Attempt to find answer types using NEs and WordNet
     # Order NE answer types before WordNet results
